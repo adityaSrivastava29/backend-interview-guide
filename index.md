@@ -1,21 +1,3 @@
-# Java Backend Engineering Handbook
-
-> **Complete Interview Preparation & Production Knowledge Base**
-
----
-
-## What Is This?
-
-A production-grade, interview-focused knowledge base covering every topic a Java Backend Engineer needs to crack interviews at Product-Based and Service-Based companies. Written for engineers who already know Java and Spring Boot but want to go deeper.
-
-## How to Use This
-
-- **Quick Revision** → Read the `## Summary` section of each topic
-- **Deep Learning** → Read top-to-bottom in section order
-- **Interview Prep** → Jump to `## Interview Questions` in each section
-- **Production Incidents** → Section 14 has 100 real incident walkthroughs
-- **Cheatsheets** → Each section ends with a condensed cheatsheet
-
 ## Sections
 
 | # | Section | File | Topics |
@@ -35,25 +17,3 @@ A production-grade, interview-focused knowledge base covering every topic a Java
 | 13 | Security | [section-13-security.md](section-13-security.md) | JWT, OAuth2, Spring Security, OWASP Top 10 |
 | 14 | Production Support | [section-14-production-support.md](section-14-production-support.md) | 100 Real Incidents with RCA and Fixes |
 | 15 | Interview Q&A Bank | [section-15-interview-qa-bank.md](section-15-interview-qa-bank.md) | 300 Java + 200 Spring + 100 Microservices + 100 Kafka + 100 SQL |
-
----
-
-## Interview Readiness Checklist
-
-- [ ] Can explain JVM memory model and GC pausing without notes
-- [ ] Can draw HashMap internals on a whiteboard
-- [ ] Know every GC algorithm and when to choose each
-- [ ] Can explain Bean lifecycle step-by-step
-- [ ] Can design a microservice from scratch with resilience patterns
-- [ ] Can explain Kafka partition rebalancing and exactly-once semantics
-- [ ] Can debug N+1 problems and fix them using `@EntityGraph` or `JOIN FETCH`
-- [ ] Can design a distributed lock with Redis
-- [ ] Can explain Saga pattern (both Choreography and Orchestration)
-- [ ] Know ACID vs BASE and when to use each
-- [ ] Can answer "How would you scale this to 10x traffic?" for any design
-- [ ] Know at least 3 real production incidents and how you fixed them
-
----
-
-*Last Updated: June 2026*
-
