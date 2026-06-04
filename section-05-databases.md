@@ -25,17 +25,17 @@ nav_order: 6
 
 ---
 
-# 1. Indexes
+## 1. Indexes
 
-## Definition
+### Definition
 
 An **index** is a data structure that speeds up data retrieval by providing a fast lookup path — at the cost of additional storage and slower writes.
 
-## Mental Model
+### Mental Model
 
 Think of a book's **index at the back**. Instead of reading every page to find "JVM Architecture", you look up "J" in the index → page 47. The database does the same — instead of scanning every row, it uses the index to find rows quickly.
 
-## B-Tree Index (Default)
+### B-Tree Index (Default)
 
 B-Tree (Balanced Tree) is the default index type in PostgreSQL and MySQL.
 
@@ -50,16 +50,16 @@ Each node: sorted keys + pointers to children or data rows
 Leaf nodes: linked list for range queries
 ```
 
-### B-Tree Index Characteristics
+#### B-Tree Index Characteristics
 
-| | Value |
-|--|--|
-| Structure | Balanced tree, O(log n) operations |
-| Best For | Equality (`=`), range (`<`, `>`, BETWEEN), sorting, LIKE 'prefix%' |
-| NOT Good For | LIKE '%suffix%', full-text, geographic |
-| Height for 1M rows | ~5–6 levels |
+|                    | Value                                                              |
+| ------------------ | ------------------------------------------------------------------ |
+| Structure          | Balanced tree, O(log n) operations                                 |
+| Best For           | Equality (`=`), range (`<`, `>`, BETWEEN), sorting, LIKE 'prefix%' |
+| NOT Good For       | LIKE '%suffix%', full-text, geographic                             |
+| Height for 1M rows | ~5–6 levels                                                        |
 
-### Creating B-Tree Indexes
+#### Creating B-Tree Indexes
 
 ```sql
 -- Single column index
@@ -77,29 +77,29 @@ CREATE INDEX idx_users_email_lower ON users(LOWER(email));
 SELECT * FROM users WHERE LOWER(email) = 'user@example.com';
 ```
 
-## Hash Index
+### Hash Index
 
 ```sql
 -- PostgreSQL: Hash indexes
 CREATE INDEX idx_sessions_token ON sessions USING HASH (session_token);
 ```
 
-| | Hash Index | B-Tree Index |
-|--|------------|--------------|
-| Equality lookup | O(1) | O(log n) |
-| Range queries | NOT supported | Supported |
-| Sorting | NOT supported | Supported |
-| Size | Smaller | Larger |
-| Best For | Exact equality on large text fields | Most use cases |
+|                 | Hash Index                          | B-Tree Index   |
+| --------------- | ----------------------------------- | -------------- |
+| Equality lookup | O(1)                                | O(log n)       |
+| Range queries   | NOT supported                       | Supported      |
+| Sorting         | NOT supported                       | Supported      |
+| Size            | Smaller                             | Larger         |
+| Best For        | Exact equality on large text fields | Most use cases |
 
-## Composite Index
+### Composite Index
 
 ```sql
 -- Composite index on (user_id, created_at)
 CREATE INDEX idx_orders_user_date ON orders(user_id, created_at DESC);
 ```
 
-### The Leftmost Prefix Rule
+#### The Leftmost Prefix Rule
 
 ```sql
 -- Index: (user_id, status, created_at)
@@ -114,7 +114,7 @@ WHERE created_at > '2025-01-01'     -- skips both leftmost columns
 WHERE user_id = 123 AND created_at > '2025-01-01'  -- skips 'status', partial use
 ```
 
-## When Index Scans Become Table Scans
+### When Index Scans Become Table Scans
 
 The query planner may **ignore** your index if:
 
@@ -139,7 +139,7 @@ WHERE gender = 'M'  -- 50% of rows match → full scan is faster
 WHERE created_at IS NULL  -- B-tree stores NULLs, this CAN use index in PostgreSQL
 ```
 
-## Index Strategies for Production
+### Index Strategies for Production
 
 ```sql
 -- Query: "Get all open orders for user 123, newest first"
@@ -157,18 +157,18 @@ INCLUDE (id, total_amount);
 
 ---
 
-# 2. Transactions & ACID
+## 2. Transactions & ACID
 
-## ACID Properties
+### ACID Properties
 
-| Property | Definition | Example |
-|----------|-----------|---------|
-| **Atomicity** | All operations succeed or all fail — no partial state | Transfer: debit AND credit happen, or neither |
-| **Consistency** | Database moves from one valid state to another | Account balance never goes negative |
-| **Isolation** | Concurrent transactions don't see each other's intermediate state | Two users booking last seat — only one succeeds |
-| **Durability** | Committed transactions survive system failures | Power outage doesn't lose committed data |
+| Property        | Definition                                                        | Example                                         |
+| --------------- | ----------------------------------------------------------------- | ----------------------------------------------- |
+| **Atomicity**   | All operations succeed or all fail — no partial state             | Transfer: debit AND credit happen, or neither   |
+| **Consistency** | Database moves from one valid state to another                    | Account balance never goes negative             |
+| **Isolation**   | Concurrent transactions don't see each other's intermediate state | Two users booking last seat — only one succeeds |
+| **Durability**  | Committed transactions survive system failures                    | Power outage doesn't lose committed data        |
 
-## How Atomicity is Implemented
+### How Atomicity is Implemented
 
 ```
 Write-Ahead Log (WAL / Redo Log):
@@ -179,25 +179,25 @@ Write-Ahead Log (WAL / Redo Log):
    - No "COMMIT" in WAL → undo the partial changes
 ```
 
-## Transaction in Spring
+### Transaction in Spring
 
 ```java
 @Service
 public class BankingService {
-    
+
     @Transactional
     public void transfer(Long fromAccountId, Long toAccountId, BigDecimal amount) {
         Account from = accountRepository.findByIdWithLock(fromAccountId); // SELECT FOR UPDATE
         Account to = accountRepository.findByIdWithLock(toAccountId);
-        
+
         if (from.getBalance().compareTo(amount) < 0) {
             throw new InsufficientFundsException("Insufficient balance");
             // RuntimeException → triggers rollback
         }
-        
+
         from.setBalance(from.getBalance().subtract(amount));
         to.setBalance(to.getBalance().add(amount));
-        
+
         accountRepository.save(from);
         accountRepository.save(to);
         // Both saves happen in same transaction → atomic
@@ -205,22 +205,22 @@ public class BankingService {
 }
 ```
 
-## @Transactional Propagation Types
+### @Transactional Propagation Types
 
-| Propagation | Behavior |
-|-------------|----------|
-| `REQUIRED` (default) | Join existing transaction; create new if none |
-| `REQUIRES_NEW` | Always create new transaction; suspend existing |
-| `SUPPORTS` | Join if exists; run without transaction if none |
-| `NOT_SUPPORTED` | Run without transaction; suspend existing |
-| `MANDATORY` | Must have existing transaction; throw if none |
-| `NEVER` | Must NOT have transaction; throw if one exists |
-| `NESTED` | Nested savepoint within existing transaction |
+| Propagation          | Behavior                                        |
+| -------------------- | ----------------------------------------------- |
+| `REQUIRED` (default) | Join existing transaction; create new if none   |
+| `REQUIRES_NEW`       | Always create new transaction; suspend existing |
+| `SUPPORTS`           | Join if exists; run without transaction if none |
+| `NOT_SUPPORTED`      | Run without transaction; suspend existing       |
+| `MANDATORY`          | Must have existing transaction; throw if none   |
+| `NEVER`              | Must NOT have transaction; throw if one exists  |
+| `NESTED`             | Nested savepoint within existing transaction    |
 
 ```java
 @Service
 public class AuditService {
-    
+
     // REQUIRES_NEW — audit must commit even if outer transaction rolls back
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAuditEvent(AuditEvent event) {
@@ -231,14 +231,14 @@ public class AuditService {
 @Service
 public class OrderService {
     @Autowired private AuditService auditService;
-    
+
     @Transactional
     public void placeOrder(Order order) {
         orderRepository.save(order);
         auditService.logAuditEvent(new AuditEvent("ORDER_PLACED", order.getId()));
         // If audit fails, REQUIRES_NEW rolls back ONLY audit tx
         // Main transaction (order save) continues
-        
+
         throw new RuntimeException("Payment failed");
         // Order save rolls back, BUT audit log already committed (REQUIRES_NEW)
     }
@@ -247,25 +247,25 @@ public class OrderService {
 
 ---
 
-# 3. Isolation Levels
+## 3. Isolation Levels
 
-## Concurrency Problems
+### Concurrency Problems
 
-| Problem | Description | Example |
-|---------|-------------|---------|
-| **Dirty Read** | Read uncommitted data from another transaction | Read balance while other transaction is updating it |
-| **Non-Repeatable Read** | Same query returns different results within same transaction | Read order total twice; it changed between reads |
-| **Phantom Read** | Query returns different set of rows | Count orders twice; new order inserted between queries |
-| **Lost Update** | Two transactions update same row; one overwrites the other | Both read balance 100, both add 50, final: 150 not 200 |
+| Problem                 | Description                                                  | Example                                                |
+| ----------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
+| **Dirty Read**          | Read uncommitted data from another transaction               | Read balance while other transaction is updating it    |
+| **Non-Repeatable Read** | Same query returns different results within same transaction | Read order total twice; it changed between reads       |
+| **Phantom Read**        | Query returns different set of rows                          | Count orders twice; new order inserted between queries |
+| **Lost Update**         | Two transactions update same row; one overwrites the other   | Both read balance 100, both add 50, final: 150 not 200 |
 
-## Isolation Levels and Problems They Prevent
+### Isolation Levels and Problems They Prevent
 
-| Isolation Level | Dirty Read | Non-Repeatable Read | Phantom Read | Performance |
-|-----------------|------------|---------------------|--------------|-------------|
-| `READ UNCOMMITTED` | ❌ | ❌ | ❌ | Highest |
-| `READ COMMITTED` (PG default) | ✅ | ❌ | ❌ | High |
-| `REPEATABLE READ` (MySQL default) | ✅ | ✅ | ❌ (MySQL) | Medium |
-| `SERIALIZABLE` | ✅ | ✅ | ✅ | Lowest |
+| Isolation Level                   | Dirty Read | Non-Repeatable Read | Phantom Read | Performance |
+| --------------------------------- | ---------- | ------------------- | ------------ | ----------- |
+| `READ UNCOMMITTED`                | ❌         | ❌                  | ❌           | Highest     |
+| `READ COMMITTED` (PG default)     | ✅         | ❌                  | ❌           | High        |
+| `REPEATABLE READ` (MySQL default) | ✅         | ✅                  | ❌ (MySQL)   | Medium      |
+| `SERIALIZABLE`                    | ✅         | ✅                  | ✅           | Lowest      |
 
 ```sql
 -- Set for session
@@ -283,7 +283,7 @@ public OrderSummary processCheckout(Long orderId) {
 }
 ```
 
-## MVCC (Multi-Version Concurrency Control)
+### MVCC (Multi-Version Concurrency Control)
 
 PostgreSQL uses MVCC to implement isolation without blocking reads:
 
@@ -299,9 +299,9 @@ No locks for readers! Writers create new versions.
 
 ---
 
-# 4. Deadlocks & Locking
+## 4. Deadlocks & Locking
 
-## What is a Deadlock?
+### What is a Deadlock?
 
 ```
 Transaction A: holds lock on Account-1, waiting for Account-2
@@ -309,7 +309,7 @@ Transaction B: holds lock on Account-2, waiting for Account-1
 → Neither can proceed → deadlock
 ```
 
-## Deadlock Prevention
+### Deadlock Prevention
 
 ```java
 // Always acquire locks in CONSISTENT ORDER
@@ -329,7 +329,7 @@ public void transfer(Long fromId, Long toId, BigDecimal amount) {
 }
 ```
 
-## Locking Strategies
+### Locking Strategies
 
 ```sql
 -- Pessimistic Locking: Lock row immediately
@@ -340,9 +340,9 @@ SELECT * FROM orders WHERE id = 123 FOR UPDATE;
 SELECT * FROM orders WHERE id = 123 FOR SHARE;
 
 -- Skip locked rows (queue-style processing)
-SELECT * FROM jobs WHERE status = 'PENDING' 
-ORDER BY created_at 
-LIMIT 10 
+SELECT * FROM jobs WHERE status = 'PENDING'
+ORDER BY created_at
+LIMIT 10
 FOR UPDATE SKIP LOCKED;  -- skip rows locked by other workers
 ```
 
@@ -356,10 +356,10 @@ Optional<Order> findByIdWithLock(@Param("id") Long id);
 @Entity
 public class Order {
     @Id private Long id;
-    
+
     @Version  // Spring/JPA auto-manages this version number
     private Long version;
-    
+
     private BigDecimal totalAmount;
 }
 // If two transactions read version=1, both try to update:
@@ -367,22 +367,22 @@ public class Order {
 // Second one fails with OptimisticLockException (version mismatch)
 ```
 
-## Optimistic vs Pessimistic Locking
+### Optimistic vs Pessimistic Locking
 
-| | Optimistic | Pessimistic |
-|--|------------|-------------|
-| Lock acquired | On commit, not read | On read |
-| Approach | Assume no conflict, detect at save | Assume conflict, lock upfront |
-| Performance | Higher concurrency | Lower concurrency |
-| Failure mode | `OptimisticLockException` at commit | Waiting / deadlock |
-| Best For | Low contention, read-heavy | High contention, write-heavy |
-| Example | E-commerce product views | Bank transfers, seat booking |
+|               | Optimistic                          | Pessimistic                   |
+| ------------- | ----------------------------------- | ----------------------------- |
+| Lock acquired | On commit, not read                 | On read                       |
+| Approach      | Assume no conflict, detect at save  | Assume conflict, lock upfront |
+| Performance   | Higher concurrency                  | Lower concurrency             |
+| Failure mode  | `OptimisticLockException` at commit | Waiting / deadlock            |
+| Best For      | Low contention, read-heavy          | High contention, write-heavy  |
+| Example       | E-commerce product views            | Bank transfers, seat booking  |
 
 ---
 
-# 5. Query Optimization
+## 5. Query Optimization
 
-## EXPLAIN ANALYZE
+### EXPLAIN ANALYZE
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
@@ -404,7 +404,7 @@ LIMIT 20;
 -- Buffers: hit=1234 miss=56 → cache hits vs disk reads
 ```
 
-## Common Query Anti-Patterns
+### Common Query Anti-Patterns
 
 ```sql
 -- ANTI-PATTERN 1: SELECT * (fetches unused columns, prevents covering index)
@@ -437,7 +437,7 @@ WHERE id IN (1, 2, 3, ..., 10000)  -- slow
 JOIN (VALUES (1), (2), ...) AS ids(id) ON t.id = ids.id
 ```
 
-## Query Optimization Checklist
+### Query Optimization Checklist
 
 ```
 □ EXPLAIN ANALYZE shows Index Scan (not Seq Scan) for large tables?
@@ -452,9 +452,9 @@ JOIN (VALUES (1), (2), ...) AS ids(id) ON t.id = ids.id
 
 ---
 
-# 6. Pagination
+## 6. Pagination
 
-## OFFSET Pagination — Simple but Slow
+### OFFSET Pagination — Simple but Slow
 
 ```sql
 -- Page 1 (rows 1-20)
@@ -466,7 +466,7 @@ SELECT * FROM orders ORDER BY created_at DESC LIMIT 20 OFFSET 1980;
 -- At page 10000: reads 199,980 rows to return 20. O(n) with page number!
 ```
 
-## Keyset (Cursor-Based) Pagination — Production Standard
+### Keyset (Cursor-Based) Pagination — Production Standard
 
 ```sql
 -- First page
@@ -493,39 +493,39 @@ public CursorPage<OrderResponse> getOrders(
         @RequestParam String userId,
         @RequestParam(required = false) String cursor,  // base64 encoded
         @RequestParam(defaultValue = "20") int size) {
-    
+
     Cursor decoded = cursor != null ? Cursor.decode(cursor) : null;
-    
+
     List<Order> orders = orderRepository.findWithCursor(userId, decoded, size + 1);
-    
+
     boolean hasNext = orders.size() > size;
     List<Order> page = hasNext ? orders.subList(0, size) : orders;
-    
+
     String nextCursor = hasNext ? Cursor.encode(page.get(page.size() - 1)) : null;
-    
+
     return CursorPage.of(page.stream().map(OrderResponse::from).toList(), nextCursor, hasNext);
 }
 ```
 
-## Pagination Comparison
+### Pagination Comparison
 
-| | OFFSET | Keyset/Cursor |
-|--|--------|---------------|
-| Performance | O(n) — degrades at high pages | O(log n) — constant |
-| Supports random access | Yes (jump to page 50) | No |
-| Handles concurrent inserts | Inconsistent results | Stable |
-| API style | Page number | Opaque cursor token |
-| Use For | Admin dashboards, small datasets | Infinite scroll, feeds, large datasets |
+|                            | OFFSET                           | Keyset/Cursor                          |
+| -------------------------- | -------------------------------- | -------------------------------------- |
+| Performance                | O(n) — degrades at high pages    | O(log n) — constant                    |
+| Supports random access     | Yes (jump to page 50)            | No                                     |
+| Handles concurrent inserts | Inconsistent results             | Stable                                 |
+| API style                  | Page number                      | Opaque cursor token                    |
+| Use For                    | Admin dashboards, small datasets | Infinite scroll, feeds, large datasets |
 
 ---
 
-# 7. Partitioning
+## 7. Partitioning
 
-## Definition
+### Definition
 
 **Table partitioning** splits a large table into smaller, more manageable pieces (partitions) while maintaining a unified logical view.
 
-## Range Partitioning (most common for time-series data)
+### Range Partitioning (most common for time-series data)
 
 ```sql
 -- Partition orders by year
@@ -550,7 +550,7 @@ SELECT * FROM orders WHERE created_at BETWEEN '2025-01-01' AND '2025-06-30';
 -- Only scans orders_2025, not 2023 or 2024!
 ```
 
-## List Partitioning (by category)
+### List Partitioning (by category)
 
 ```sql
 CREATE TABLE transactions PARTITION BY LIST (status);
@@ -559,7 +559,7 @@ CREATE TABLE transactions_pending PARTITION OF transactions FOR VALUES IN ('PEND
 CREATE TABLE transactions_failed PARTITION OF transactions FOR VALUES IN ('FAILED', 'CANCELLED');
 ```
 
-## Hash Partitioning (for even distribution)
+### Hash Partitioning (for even distribution)
 
 ```sql
 CREATE TABLE users PARTITION BY HASH (id);
@@ -569,21 +569,21 @@ CREATE TABLE users_2 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 2)
 CREATE TABLE users_3 PARTITION OF users FOR VALUES WITH (MODULUS 4, REMAINDER 3);
 ```
 
-## Partitioning vs Sharding
+### Partitioning vs Sharding
 
-| | Partitioning | Sharding |
-|--|--------------|---------|
-| Location | Same database server | Different servers |
-| Transparency | Fully transparent to queries | Application must route |
-| Complexity | Low | High |
-| Scale | Vertical (one server) | Horizontal (multiple servers) |
-| Use For | Large tables, archiving | Massive scale, can't fit on one server |
+|              | Partitioning                 | Sharding                               |
+| ------------ | ---------------------------- | -------------------------------------- |
+| Location     | Same database server         | Different servers                      |
+| Transparency | Fully transparent to queries | Application must route                 |
+| Complexity   | Low                          | High                                   |
+| Scale        | Vertical (one server)        | Horizontal (multiple servers)          |
+| Use For      | Large tables, archiving      | Massive scale, can't fit on one server |
 
 ---
 
-# 8. Sharding
+## 8. Sharding
 
-## Definition
+### Definition
 
 **Sharding** is horizontal scaling by distributing data across **multiple database instances**, each holding a subset of the data.
 
@@ -595,9 +595,9 @@ flowchart TD
     Router -->|user_id 66-100%| DB3[Shard 3\nUsers 6-9M]
 ```
 
-## Sharding Strategies
+### Sharding Strategies
 
-### 1. Hash-Based Sharding
+#### 1. Hash-Based Sharding
 
 ```
 shard = hash(user_id) % num_shards
@@ -609,7 +609,7 @@ user_id = 456 → hash = 1234567 → 1234567 % 3 = 1 → Shard 1
 **Pro:** Even distribution
 **Con:** Adding shards requires re-hashing all data (use consistent hashing to minimize)
 
-### 2. Range-Based Sharding
+#### 2. Range-Based Sharding
 
 ```
 user_id 1 – 1,000,000  → Shard 1
@@ -619,7 +619,7 @@ user_id 1,000,001 – 2,000,000 → Shard 2
 **Pro:** Easy range queries
 **Con:** Hot spots if recent IDs are active (Shard 3 gets all traffic for new users)
 
-### 3. Directory-Based Sharding
+#### 3. Directory-Based Sharding
 
 ```
 Lookup table: user_id → shard_id
@@ -630,11 +630,11 @@ user 456 → Shard 1
 **Pro:** Full flexibility in routing
 **Con:** Lookup table is a bottleneck / single point of failure
 
-## Cross-Shard Query Problem
+### Cross-Shard Query Problem
 
 ```sql
 -- This query works fine on single DB:
-SELECT u.name, SUM(o.total) 
+SELECT u.name, SUM(o.total)
 FROM users u JOIN orders o ON o.user_id = u.id
 GROUP BY u.id;
 
@@ -645,9 +645,9 @@ GROUP BY u.id;
 
 ---
 
-# 9. Replication
+## 9. Replication
 
-## Primary-Replica (Master-Slave) Replication
+### Primary-Replica (Master-Slave) Replication
 
 ```mermaid
 flowchart LR
@@ -658,21 +658,21 @@ flowchart LR
     Reads --> Replica2
 ```
 
-## Types of Replication
+### Types of Replication
 
-| | Synchronous | Asynchronous |
-|--|-------------|--------------|
-| Data loss risk | Zero (confirmed before ACK) | Some lag possible |
-| Performance | Slower (wait for replica confirmation) | Faster |
-| Consistency | Strong | Eventual |
-| PostgreSQL config | `synchronous_commit = on` | `synchronous_commit = off` |
-| Use For | Financial data, high criticality | Analytics reads, reporting |
+|                   | Synchronous                            | Asynchronous               |
+| ----------------- | -------------------------------------- | -------------------------- |
+| Data loss risk    | Zero (confirmed before ACK)            | Some lag possible          |
+| Performance       | Slower (wait for replica confirmation) | Faster                     |
+| Consistency       | Strong                                 | Eventual                   |
+| PostgreSQL config | `synchronous_commit = on`              | `synchronous_commit = off` |
+| Use For           | Financial data, high criticality       | Analytics reads, reporting |
 
-## Replication Lag — A Common Production Issue
+### Replication Lag — A Common Production Issue
 
 ```sql
 -- Check replication lag on PostgreSQL
-SELECT 
+SELECT
     client_addr,
     state,
     sent_lsn,
@@ -691,13 +691,13 @@ FROM pg_stat_replication;
 // Pattern: Read-your-writes consistency
 @Service
 public class UserService {
-    
+
     @Transactional  // uses primary
     public User createUser(CreateUserRequest request) {
         User user = userRepository.save(new User(request));
         return user;
     }
-    
+
     // After creating, must read from primary (not replica) for consistency
     @Transactional(readOnly = true)
     public User getUserById(Long id) {
@@ -709,13 +709,13 @@ public class UserService {
 // Route write transactions to primary, read-only to replica
 @Configuration
 public class RoutingDataSourceConfig {
-    
+
     @Bean
     @Primary
     public DataSource routingDataSource(
             @Qualifier("primaryDataSource") DataSource primary,
             @Qualifier("replicaDataSource") DataSource replica) {
-        
+
         RoutingDataSource routing = new RoutingDataSource();
         routing.setDefaultTargetDataSource(primary);
         routing.setTargetDataSources(Map.of(
@@ -729,30 +729,31 @@ public class RoutingDataSourceConfig {
 
 ---
 
-# 10. Production Scenarios
+## 10. Production Scenarios
 
-## Scenario 1: Slow Query Debugging
+### Scenario 1: Slow Query Debugging
 
-### Problem
+#### Problem
+
 E-commerce checkout page takes 8 seconds. `SELECT * FROM products WHERE category_id = 5 AND in_stock = true ORDER BY price ASC` running on a table with 10M rows.
 
-### Investigation
+#### Investigation
 
 ```sql
 EXPLAIN ANALYZE
-SELECT * FROM products 
-WHERE category_id = 5 AND in_stock = true 
+SELECT * FROM products
+WHERE category_id = 5 AND in_stock = true
 ORDER BY price ASC;
 
 -- Output shows: Seq Scan on products (rows=8000000)
 -- Table full scan! No index on category_id.
 ```
 
-### Fix
+#### Fix
 
 ```sql
 -- Add composite index matching the query
-CREATE INDEX idx_products_category_stock_price 
+CREATE INDEX idx_products_category_stock_price
 ON products(category_id, in_stock, price ASC)
 INCLUDE (id, name, image_url, description);
 
@@ -764,12 +765,13 @@ EXPLAIN ANALYZE ...
 
 ---
 
-## Scenario 2: Deadlock in Order Processing
+### Scenario 2: Deadlock in Order Processing
 
-### Problem
+#### Problem
+
 Error logs show `PSQLException: ERROR: deadlock detected` during peak hours.
 
-### Root Cause
+#### Root Cause
 
 ```sql
 -- Transaction A (Order 1):
@@ -781,7 +783,7 @@ UPDATE inventory SET quantity = quantity - 1 WHERE product_id = 20;  -- locks ro
 UPDATE inventory SET quantity = quantity - 1 WHERE product_id = 10;  -- waits for row 10 → DEADLOCK
 ```
 
-### Fix
+#### Fix
 
 ```java
 // Sort product IDs before acquiring locks
@@ -795,32 +797,36 @@ public void reserveInventory(List<Long> productIds, List<Integer> quantities) {
 
 ---
 
-## Interview Questions
+### Interview Questions
 
-### Basic
+#### Basic
+
 1. What is the difference between B-Tree and Hash index?
 2. Explain ACID properties with examples.
 3. What is the difference between optimistic and pessimistic locking?
 
-### Intermediate
+#### Intermediate
+
 4. What is the leftmost prefix rule for composite indexes?
 5. Explain MVCC and how PostgreSQL implements it.
 6. When would you use a partial index?
 7. What is the difference between OFFSET and cursor-based pagination?
 
-### Advanced
+#### Advanced
+
 8. Explain how sharding affects JOIN operations and how to mitigate it.
 9. What is a covering index and how does it enable index-only scans?
 10. How does replication lag affect application consistency? How do you handle it?
 11. Design a database schema for a ride-sharing app that can handle 10M rides per day.
 
-### Scenario-Based
-12. *Your database CPU is at 95% during business hours. EXPLAIN ANALYZE shows Seq Scans. Walk me through fixing this.*
-13. *Your application gets `OptimisticLockException` frequently during flash sales. How do you handle this?*
+#### Scenario-Based
+
+12. _Your database CPU is at 95% during business hours. EXPLAIN ANALYZE shows Seq Scans. Walk me through fixing this._
+13. _Your application gets `OptimisticLockException` frequently during flash sales. How do you handle this?_
 
 ---
 
-## Summary — Database Cheatsheet
+### Summary — Database Cheatsheet
 
 ```
 Indexes:

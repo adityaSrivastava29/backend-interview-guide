@@ -23,7 +23,7 @@ nav_order: 16
 
 ---
 
-# 1. Core Java — Top 50 Questions
+## 1. Core Java — Top 50 Questions
 
 ---
 
@@ -35,13 +35,13 @@ nav_order: 16
 
 **Q2. What is the difference between Heap and Stack memory?**
 
-| Heap | Stack |
-|------|-------|
-| Objects and arrays | Method frames, local variables, references |
-| Shared across all threads | Per-thread |
-| GC managed | Automatically reclaimed when method returns |
-| Slow (GC overhead) | Fast (LIFO) |
-| `OutOfMemoryError` when full | `StackOverflowError` when full |
+| Heap                         | Stack                                       |
+| ---------------------------- | ------------------------------------------- |
+| Objects and arrays           | Method frames, local variables, references  |
+| Shared across all threads    | Per-thread                                  |
+| GC managed                   | Automatically reclaimed when method returns |
+| Slow (GC overhead)           | Fast (LIFO)                                 |
+| `OutOfMemoryError` when full | `StackOverflowError` when full              |
 
 ---
 
@@ -61,12 +61,12 @@ nav_order: 16
 
 **Q5. What is the difference between ArrayList and LinkedList?**
 
-| Operation | ArrayList | LinkedList |
-|-----------|-----------|------------|
-| Random access `get(i)` | O(1) | O(n) |
-| Add to end | O(1) amortized | O(1) |
-| Add/remove from middle | O(n) (shift) | O(1) (pointer update) |
-| Memory | Compact (contiguous array) | High (each node has prev+next pointers) |
+| Operation              | ArrayList                  | LinkedList                              |
+| ---------------------- | -------------------------- | --------------------------------------- |
+| Random access `get(i)` | O(1)                       | O(n)                                    |
+| Add to end             | O(1) amortized             | O(1)                                    |
+| Add/remove from middle | O(n) (shift)               | O(1) (pointer update)                   |
+| Memory                 | Compact (contiguous array) | High (each node has prev+next pointers) |
 
 > **Use ArrayList by default.** LinkedList better only when frequent insertions/deletions in the middle.
 
@@ -81,6 +81,7 @@ nav_order: 16
 **Q7. Explain the Java Memory Model (JMM) and the `volatile` keyword.**
 
 > JMM defines how threads interact through memory. Without synchronization, threads cache values locally and may not see each other's updates (visibility problem). `volatile`:
+>
 > - Guarantees **visibility**: every write is immediately visible to all threads
 > - Guarantees **ordering**: prevents instruction reordering around volatile reads/writes
 > - Does NOT guarantee **atomicity** (use `AtomicInteger` for that)
@@ -89,13 +90,13 @@ nav_order: 16
 
 **Q8. What is the difference between synchronized and ReentrantLock?**
 
-| Feature | synchronized | ReentrantLock |
-|---------|-------------|---------------|
-| Unlock | Auto (block exit) | Must call `unlock()` in finally |
-| Try lock | No | `tryLock(timeout)` — non-blocking |
-| Fairness | No | `new ReentrantLock(true)` |
-| Interruptible | No | `lockInterruptibly()` |
-| Condition variables | `wait()/notify()` | Multiple `Condition` objects |
+| Feature             | synchronized      | ReentrantLock                     |
+| ------------------- | ----------------- | --------------------------------- |
+| Unlock              | Auto (block exit) | Must call `unlock()` in finally   |
+| Try lock            | No                | `tryLock(timeout)` — non-blocking |
+| Fairness            | No                | `new ReentrantLock(true)`         |
+| Interruptible       | No                | `lockInterruptibly()`             |
+| Condition variables | `wait()/notify()` | Multiple `Condition` objects      |
 
 ---
 
@@ -104,6 +105,7 @@ nav_order: 16
 > Deadlock occurs when thread A holds lock 1 and waits for lock 2, while thread B holds lock 2 and waits for lock 1.
 
 > Prevention strategies:
+>
 > 1. **Lock ordering**: always acquire locks in the same global order
 > 2. **Try-lock with timeout**: `lock.tryLock(timeout)` — back off if can't acquire
 > 3. **Avoid nested locks**: minimize lock scope
@@ -135,22 +137,24 @@ List<String> result = employees.stream()           // source
 
 **Q12. What are the four types of references in Java?**
 
-| Type | GC Behavior | Use Case |
-|------|-------------|----------|
-| Strong | Never collected while referenced | Default |
-| Soft | Collected on memory pressure | Caches |
-| Weak | Collected at next GC | WeakHashMap, listeners |
-| Phantom | After finalization | Cleanup actions |
+| Type    | GC Behavior                      | Use Case               |
+| ------- | -------------------------------- | ---------------------- |
+| Strong  | Never collected while referenced | Default                |
+| Soft    | Collected on memory pressure     | Caches                 |
+| Weak    | Collected at next GC             | WeakHashMap, listeners |
+| Phantom | After finalization               | Cleanup actions        |
 
 ---
 
 **Q13. Explain Java's Garbage Collection. What are the main algorithms?**
 
 > Java GC reclaims memory occupied by unreachable objects. JVM generations:
+>
 > - **Young Generation** (Eden + Survivor spaces): most objects die here. Minor GC is fast.
 > - **Old Generation**: long-lived objects. Major/Full GC is expensive.
 
 > Algorithms:
+>
 > - **G1GC** (default Java 9+): divides heap into regions, concurrent marking, low pause
 > - **ZGC** (Java 15+): sub-millisecond pauses, concurrent phases, scales to terabytes
 > - **Serial/Parallel**: single/multi-threaded, stop-the-world — for simple/throughput workloads
@@ -175,14 +179,14 @@ List<String> result = employees.stream()           // source
 
 > An interface with exactly one abstract method (can have default methods). Annotated with `@FunctionalInterface`.
 
-| Interface | Signature | Example |
-|-----------|-----------|---------|
-| `Supplier<T>` | `() → T` | `() -> "hello"` |
-| `Consumer<T>` | `T → void` | `System.out::println` |
-| `Function<T,R>` | `T → R` | `String::length` |
-| `Predicate<T>` | `T → boolean` | `s -> s.length() > 5` |
-| `BiFunction<T,U,R>` | `(T,U) → R` | `(a,b) -> a + b` |
-| `UnaryOperator<T>` | `T → T` | `String::toUpperCase` |
+| Interface           | Signature     | Example               |
+| ------------------- | ------------- | --------------------- |
+| `Supplier<T>`       | `() → T`      | `() -> "hello"`       |
+| `Consumer<T>`       | `T → void`    | `System.out::println` |
+| `Function<T,R>`     | `T → R`       | `String::length`      |
+| `Predicate<T>`      | `T → boolean` | `s -> s.length() > 5` |
+| `BiFunction<T,U,R>` | `(T,U) → R`   | `(a,b) -> a + b`      |
+| `UnaryOperator<T>`  | `T → T`       | `String::toUpperCase` |
 
 ---
 
@@ -268,7 +272,7 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 
 ---
 
-# 2. Spring Boot & Spring Framework — Top 40 Questions
+## 2. Spring Boot & Spring Framework — Top 40 Questions
 
 ---
 
@@ -305,14 +309,14 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 
 **Q29. What are Spring bean scopes?**
 
-| Scope | Description |
-|-------|-------------|
-| `singleton` | One per ApplicationContext (default) |
-| `prototype` | New instance per injection/request |
-| `request` | One per HTTP request |
-| `session` | One per HTTP session |
-| `application` | One per ServletContext |
-| `websocket` | One per WebSocket session |
+| Scope         | Description                          |
+| ------------- | ------------------------------------ |
+| `singleton`   | One per ApplicationContext (default) |
+| `prototype`   | New instance per injection/request   |
+| `request`     | One per HTTP request                 |
+| `session`     | One per HTTP session                 |
+| `application` | One per ServletContext               |
+| `websocket`   | One per WebSocket session            |
 
 > **Problem:** Injecting a `prototype` bean into a `singleton` bean — prototype is only created once. Fix: use `@Lookup` or `ObjectProvider<>`.
 
@@ -321,6 +325,7 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 **Q30. How does Spring AOP work?**
 
 > Spring AOP creates a **proxy** around the target bean. Two types:
+>
 > - **JDK Dynamic Proxy**: if bean implements an interface
 > - **CGLIB Proxy**: if no interface (creates a subclass)
 >
@@ -331,6 +336,7 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 **Q31. What is `@Transactional` and how does it work internally?**
 
 > `@Transactional` uses **AOP proxy**. When a method is called, the proxy:
+>
 > 1. Begins transaction (`connection.setAutoCommit(false)`)
 > 2. Calls the actual method
 > 3. Commits on success or rolls back on unchecked exception
@@ -341,15 +347,15 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 
 **Q32. What are the transaction propagation types?**
 
-| Propagation | Behavior |
-|-------------|----------|
-| `REQUIRED` (default) | Join existing or create new |
-| `REQUIRES_NEW` | Always create new, suspend existing |
-| `NESTED` | Nested savepoint within existing |
-| `SUPPORTS` | Join if exists, non-transactional if not |
-| `NOT_SUPPORTED` | Suspend existing, run non-transactional |
-| `MANDATORY` | Must have existing transaction, else exception |
-| `NEVER` | Must not have transaction, else exception |
+| Propagation          | Behavior                                       |
+| -------------------- | ---------------------------------------------- |
+| `REQUIRED` (default) | Join existing or create new                    |
+| `REQUIRES_NEW`       | Always create new, suspend existing            |
+| `NESTED`             | Nested savepoint within existing               |
+| `SUPPORTS`           | Join if exists, non-transactional if not       |
+| `NOT_SUPPORTED`      | Suspend existing, run non-transactional        |
+| `MANDATORY`          | Must have existing transaction, else exception |
+| `NEVER`              | Must not have transaction, else exception      |
 
 ---
 
@@ -365,15 +371,15 @@ CompletableFuture.anyOf(future1, future2).thenAccept(first -> processFirst(first
 
 > Actuator adds production-ready features to Spring Boot applications.
 
-| Endpoint | Purpose |
-|----------|---------|
-| `/actuator/health` | Health status |
-| `/actuator/metrics` | Micrometer metrics |
-| `/actuator/prometheus` | Prometheus format metrics |
-| `/actuator/env` | Configuration properties |
-| `/actuator/loggers` | Change log levels at runtime |
-| `/actuator/threaddump` | JVM thread dump |
-| `/actuator/heapdump` | JVM heap dump |
+| Endpoint               | Purpose                      |
+| ---------------------- | ---------------------------- |
+| `/actuator/health`     | Health status                |
+| `/actuator/metrics`    | Micrometer metrics           |
+| `/actuator/prometheus` | Prometheus format metrics    |
+| `/actuator/env`        | Configuration properties     |
+| `/actuator/loggers`    | Change log levels at runtime |
+| `/actuator/threaddump` | JVM thread dump              |
+| `/actuator/heapdump`   | JVM heap dump                |
 
 ---
 
@@ -442,7 +448,7 @@ public class UserRequest {
 
 ---
 
-# 3. Microservices & Distributed Systems — Top 30 Questions
+## 3. Microservices & Distributed Systems — Top 30 Questions
 
 ---
 
@@ -461,6 +467,7 @@ public class UserRequest {
 **Q44. Explain the Saga pattern.**
 
 > Manages distributed transactions using a sequence of local transactions with **compensating transactions** for rollback. Two styles:
+>
 > - **Choreography**: services react to events (event-driven, decoupled)
 > - **Orchestration**: central coordinator directs steps (explicit flow, visible)
 
@@ -509,7 +516,7 @@ public class UserRequest {
 
 ---
 
-# 4. Apache Kafka — Top 25 Questions
+## 4. Apache Kafka — Top 25 Questions
 
 ---
 
@@ -577,7 +584,7 @@ public class UserRequest {
 
 ---
 
-# 5. Databases & SQL — Top 25 Questions
+## 5. Databases & SQL — Top 25 Questions
 
 ---
 
@@ -601,12 +608,12 @@ public class UserRequest {
 
 **Q64. Explain database isolation levels.**
 
-| Level | Dirty Read | Non-Repeatable Read | Phantom Read |
-|-------|-----------|--------------------|-----------------------------|
-| READ UNCOMMITTED | ✓ possible | ✓ possible | ✓ possible |
-| READ COMMITTED | ✗ prevented | ✓ possible | ✓ possible |
-| REPEATABLE READ | ✗ | ✗ prevented | ✓ possible |
-| SERIALIZABLE | ✗ | ✗ | ✗ prevented |
+| Level            | Dirty Read  | Non-Repeatable Read | Phantom Read |
+| ---------------- | ----------- | ------------------- | ------------ |
+| READ UNCOMMITTED | ✓ possible  | ✓ possible          | ✓ possible   |
+| READ COMMITTED   | ✗ prevented | ✓ possible          | ✓ possible   |
+| REPEATABLE READ  | ✗           | ✗ prevented         | ✓ possible   |
+| SERIALIZABLE     | ✗           | ✗                   | ✗ prevented  |
 
 > PostgreSQL default: READ COMMITTED. MySQL InnoDB default: REPEATABLE READ (uses MVCC).
 
@@ -632,13 +639,13 @@ public class UserRequest {
 
 **Q68. What is the difference between DELETE, TRUNCATE, and DROP?**
 
-| | DELETE | TRUNCATE | DROP |
-|--|--------|----------|------|
-| Removes | Selected rows | All rows | Entire table |
-| WHERE clause | Yes | No | No |
-| Rollback | Yes (transactional) | Depends (Postgres: yes; MySQL: no) | No |
-| Triggers fired | Yes | No | No |
-| Speed | Slow (row-by-row) | Fast (deallocate pages) | Instant |
+|                | DELETE              | TRUNCATE                           | DROP         |
+| -------------- | ------------------- | ---------------------------------- | ------------ |
+| Removes        | Selected rows       | All rows                           | Entire table |
+| WHERE clause   | Yes                 | No                                 | No           |
+| Rollback       | Yes (transactional) | Depends (Postgres: yes; MySQL: no) | No           |
+| Triggers fired | Yes                 | No                                 | No           |
+| Speed          | Slow (row-by-row)   | Fast (deallocate pages)            | Instant      |
 
 ---
 
@@ -659,7 +666,7 @@ public class UserRequest {
 
 ---
 
-# 6. Redis — Top 20 Questions
+## 6. Redis — Top 20 Questions
 
 ---
 
@@ -696,7 +703,7 @@ public class UserRequest {
 
 ---
 
-# 7. System Design — Top 15 Questions
+## 7. System Design — Top 15 Questions
 
 ---
 
@@ -730,13 +737,14 @@ public class UserRequest {
 
 ---
 
-# 8. Behavioral & Situational — Top 15 Questions
+## 8. Behavioral & Situational — Top 15 Questions
 
 ---
 
 **Q80. Tell me about a production incident you handled.**
 
 > **Structure (STAR):**
+>
 > - **Situation**: what was the system and what broke?
 > - **Task**: what was your role?
 > - **Action**: what steps did you take?
@@ -774,7 +782,7 @@ public class UserRequest {
 
 ---
 
-## Quick Reference — Common Mistakes to Avoid in Interviews
+### Quick Reference — Common Mistakes to Avoid in Interviews
 
 ```
 Core Java Mistakes:

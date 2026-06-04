@@ -36,35 +36,38 @@ nav_order: 3
 
 ---
 
-# Creational Patterns
+## Creational Patterns
 
-## 1. Singleton
+### 1. Singleton
 
-### Definition
+#### Definition
+
 Ensures a class has **only one instance** and provides a global access point to it.
 
-### Problem
+#### Problem
+
 Database connection pools, configuration managers, logging systems — you want exactly one instance shared across the application.
 
-### Mental Model
+#### Mental Model
+
 The President of a country — there's exactly one at a time, and everyone refers to that one person.
 
-### Implementation (Thread-Safe)
+#### Implementation (Thread-Safe)
 
 ```java
 // BEST APPROACH: Enum Singleton (Joshua Bloch recommended)
 public enum DatabaseConnectionPool {
     INSTANCE;
-    
+
     private final HikariDataSource dataSource;
-    
+
     DatabaseConnectionPool() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:postgresql://localhost:5432/mydb");
         config.setMaximumPoolSize(20);
         this.dataSource = new HikariDataSource(config);
     }
-    
+
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
@@ -79,11 +82,11 @@ Connection conn = DatabaseConnectionPool.INSTANCE.getConnection();
 public class ConfigManager {
     private static volatile ConfigManager instance; // volatile prevents instruction reordering
     private final Properties props;
-    
+
     private ConfigManager() {
         props = loadFromFile();
     }
-    
+
     public static ConfigManager getInstance() {
         if (instance == null) {                     // First check (no lock)
             synchronized (ConfigManager.class) {
@@ -101,39 +104,44 @@ public class ConfigManager {
 // THIRD: Initialization-on-demand holder (lazy, thread-safe, no sync overhead)
 public class AppConfig {
     private AppConfig() { }
-    
+
     private static class Holder {
         static final AppConfig INSTANCE = new AppConfig();
     }
-    
+
     public static AppConfig getInstance() {
         return Holder.INSTANCE; // JVM guarantees class initialization is thread-safe
     }
 }
 ```
 
-### Why Enum Singleton?
+#### Why Enum Singleton?
+
 1. Thread-safe by JVM guarantee
 2. Serialization-safe (prevents new instance on deserialization)
 3. Reflection-safe (cannot call private constructor via reflection on enum)
 
-### Pros
+#### Pros
+
 - Controlled access to single instance
 - Reduced memory footprint for expensive objects
 
-### Cons
+#### Cons
+
 - Global state — hard to test (mock)
 - Violates Single Responsibility Principle
 - Creates hidden dependencies
 - Problematic in clustered environments (each node has its own "singleton")
 
-### Production Use Cases
+#### Production Use Cases
+
 - Spring Beans are singletons by default
 - Connection pools (`HikariCP`)
 - Thread pools (`Executors`)
 - Logger instances (`LoggerFactory.getLogger(...)`)
 
-### Interview Questions
+#### Interview Questions
+
 1. How do you make Singleton thread-safe?
 2. Why is enum the best Singleton implementation?
 3. How do you break a Singleton with reflection? How to prevent it?
@@ -142,15 +150,18 @@ public class AppConfig {
 
 ---
 
-## 2. Factory Method
+### 2. Factory Method
 
-### Definition
+#### Definition
+
 Defines an interface for creating an object, but lets **subclasses decide** which class to instantiate.
 
-### Problem
+#### Problem
+
 You need to create objects but don't want to couple the client code to specific implementations.
 
-### Mental Model
+#### Mental Model
+
 A **pizza franchise** — each city franchise (subclass) decides which local ingredients to use, but the franchise manual (interface) defines the pizza-making process.
 
 ```java
@@ -195,15 +206,18 @@ Notification n = NotificationFactory.create("EMAIL");
 n.send("Order shipped!", "user@example.com");
 ```
 
-### Pros
+#### Pros
+
 - Client code decoupled from concrete types
 - Easy to add new types without changing client
 
-### Cons
+#### Cons
+
 - May require subclassing / many classes
 - More complex for simple cases
 
-### Production Use Cases
+#### Production Use Cases
+
 - `DriverManager.getConnection()` in JDBC
 - `LoggerFactory.getLogger()` in SLF4J
 - `Calendar.getInstance()`
@@ -211,12 +225,14 @@ n.send("Order shipped!", "user@example.com");
 
 ---
 
-## 3. Abstract Factory
+### 3. Abstract Factory
 
-### Definition
+#### Definition
+
 Creates **families of related objects** without specifying their concrete classes.
 
-### Mental Model
+#### Mental Model
+
 A **furniture store theme**: Victorian style gives you Victorian chair + Victorian sofa + Victorian table. Modern style gives you Modern chair + Modern sofa + Modern table. You can't mix Victorian chair with Modern table.
 
 ```java
@@ -250,22 +266,24 @@ class DarkThemeFactory implements UIFactory {
 }
 ```
 
-### Factory vs Abstract Factory
+#### Factory vs Abstract Factory
 
-| | Factory Method | Abstract Factory |
-|--|----------------|------------------|
-| Creates | One product | Family of related products |
-| Extensibility | Add product types | Add product families |
-| Use When | One varying product | Multiple related products vary together |
+|               | Factory Method      | Abstract Factory                        |
+| ------------- | ------------------- | --------------------------------------- |
+| Creates       | One product         | Family of related products              |
+| Extensibility | Add product types   | Add product families                    |
+| Use When      | One varying product | Multiple related products vary together |
 
 ---
 
-## 4. Builder
+### 4. Builder
 
-### Definition
+#### Definition
+
 Constructs complex objects **step by step**, separating construction from representation.
 
-### Problem
+#### Problem
+
 Constructor with 10+ parameters — which argument is which? What if some are optional?
 
 ```java
@@ -301,7 +319,7 @@ Order order = Order.builder()
     .build();
 ```
 
-### Manual Builder (for understanding)
+#### Manual Builder (for understanding)
 
 ```java
 public class HttpRequest {
@@ -310,7 +328,7 @@ public class HttpRequest {
     private final Map<String, String> headers;
     private final String body;
     private final int timeoutMs;
-    
+
     private HttpRequest(Builder builder) {
         this.url = builder.url;
         this.method = builder.method;
@@ -318,21 +336,21 @@ public class HttpRequest {
         this.body = builder.body;
         this.timeoutMs = builder.timeoutMs;
     }
-    
+
     public static class Builder {
         private final String url;
         private String method = "GET";
         private Map<String, String> headers = new HashMap<>();
         private String body;
         private int timeoutMs = 30000;
-        
+
         public Builder(String url) { this.url = url; } // required parameter
-        
+
         public Builder method(String method) { this.method = method; return this; }
         public Builder header(String key, String value) { headers.put(key, value); return this; }
         public Builder body(String body) { this.body = body; return this; }
         public Builder timeout(int ms) { this.timeoutMs = ms; return this; }
-        
+
         public HttpRequest build() {
             if (url == null || url.isBlank()) throw new IllegalStateException("URL required");
             return new HttpRequest(this);
@@ -350,16 +368,17 @@ HttpRequest req = new HttpRequest.Builder("https://api.example.com/orders")
     .build();
 ```
 
-### Builder vs Factory
+#### Builder vs Factory
 
-| | Builder | Factory |
-|--|---------|---------|
-| Focus | Complex construction, many optional params | Which type to create |
-| Returns | Same type always | Different subtypes |
-| Readability | High (named params) | Medium |
-| Use When | Complex object with many optional fields | Multiple subtypes, decoupled creation |
+|             | Builder                                    | Factory                               |
+| ----------- | ------------------------------------------ | ------------------------------------- |
+| Focus       | Complex construction, many optional params | Which type to create                  |
+| Returns     | Same type always                           | Different subtypes                    |
+| Readability | High (named params)                        | Medium                                |
+| Use When    | Complex object with many optional fields   | Multiple subtypes, decoupled creation |
 
-### Production Use Cases
+#### Production Use Cases
+
 - Lombok `@Builder` everywhere in Spring apps
 - `RestTemplate`, `WebClient` configuration
 - `MockMvc` test setup
@@ -368,12 +387,14 @@ HttpRequest req = new HttpRequest.Builder("https://api.example.com/orders")
 
 ---
 
-## 5. Prototype
+### 5. Prototype
 
-### Definition
+#### Definition
+
 Creates new objects by **cloning** an existing object.
 
-### Use When
+#### Use When
+
 Object creation is expensive (DB query, API call, complex computation) and you want copies.
 
 ```java
@@ -381,7 +402,7 @@ public class UserProfile implements Cloneable {
     private String userId;
     private List<String> permissions;
     private Map<String, String> metadata;
-    
+
     @Override
     public UserProfile clone() {
         try {
@@ -398,11 +419,11 @@ public class UserProfile implements Cloneable {
 // Prototype registry
 class ProfileRegistry {
     private Map<String, UserProfile> registry = new HashMap<>();
-    
+
     public void register(String role, UserProfile profile) {
         registry.put(role, profile);
     }
-    
+
     public UserProfile get(String role) {
         return registry.get(role).clone(); // return clone, not original
     }
@@ -413,14 +434,16 @@ class ProfileRegistry {
 
 ---
 
-# Structural Patterns
+## Structural Patterns
 
-## 6. Adapter
+### 6. Adapter
 
-### Definition
+#### Definition
+
 Converts the interface of a class into another interface that clients expect. Makes incompatible interfaces work together.
 
-### Mental Model
+#### Mental Model
+
 A **power adapter** for your laptop in a foreign country — the plug shape differs but the functionality (electricity) is the same.
 
 ```java
@@ -440,11 +463,11 @@ interface PaymentProcessor {
 // Adapter bridges the gap
 class LegacyPaymentAdapter implements PaymentProcessor {
     private final LegacyPaymentGateway legacy;
-    
+
     public LegacyPaymentAdapter(LegacyPaymentGateway legacy) {
         this.legacy = legacy;
     }
-    
+
     @Override
     public PaymentResult processPayment(PaymentRequest request) {
         boolean success = legacy.chargeCard(
@@ -457,19 +480,22 @@ class LegacyPaymentAdapter implements PaymentProcessor {
 }
 ```
 
-### Production Use Cases
+#### Production Use Cases
+
 - Spring's `HandlerAdapter` (adapts various controller types to handler interface)
 - JDBC adapters for different database drivers
 - Wrapping AWS SDK, Stripe SDK in internal interfaces
 
 ---
 
-## 7. Decorator
+### 7. Decorator
 
-### Definition
+#### Definition
+
 Attaches **additional responsibilities** to an object dynamically, as an alternative to subclassing.
 
-### Mental Model
+#### Mental Model
+
 **Coffee customization**: Start with espresso, wrap with milk (MilkDecorator), wrap with vanilla (VanillaDecorator). Each wrapper adds behavior without modifying the original.
 
 ```java
@@ -482,9 +508,9 @@ interface DataSource {
 // Concrete component
 class FileDataSource implements DataSource {
     private final String filename;
-    
+
     public FileDataSource(String filename) { this.filename = filename; }
-    
+
     public void writeData(String data) { /* write to file */ }
     public String readData() { return /* read from file */ "data"; }
 }
@@ -492,9 +518,9 @@ class FileDataSource implements DataSource {
 // Base decorator
 abstract class DataSourceDecorator implements DataSource {
     protected final DataSource wrapped;
-    
+
     DataSourceDecorator(DataSource source) { this.wrapped = source; }
-    
+
     public void writeData(String data) { wrapped.writeData(data); }
     public String readData() { return wrapped.readData(); }
 }
@@ -502,7 +528,7 @@ abstract class DataSourceDecorator implements DataSource {
 // Concrete decorators
 class EncryptionDecorator extends DataSourceDecorator {
     EncryptionDecorator(DataSource source) { super(source); }
-    
+
     public void writeData(String data) {
         super.writeData(encrypt(data)); // encrypt before writing
     }
@@ -513,7 +539,7 @@ class EncryptionDecorator extends DataSourceDecorator {
 
 class CompressionDecorator extends DataSourceDecorator {
     CompressionDecorator(DataSource source) { super(source); }
-    
+
     public void writeData(String data) {
         super.writeData(compress(data));
     }
@@ -531,24 +557,26 @@ DataSource source = new CompressionDecorator(
 source.writeData("sensitive data"); // compress(encrypt(write))
 ```
 
-### Decorator vs Proxy vs Inheritance
+#### Decorator vs Proxy vs Inheritance
 
-| | Decorator | Proxy | Inheritance |
-|--|-----------|-------|-------------|
-| Purpose | Add behavior dynamically | Control access | Extend type |
-| Wraps Same Interface | Yes | Yes | No |
-| Multiple additions | Stack decorators | Usually one proxy | Deep hierarchy |
-| Runtime flexibility | Yes | Limited | No (compile-time) |
-| Spring Usage | `@Transactional`, `@Cacheable` | CGLIB/JDK proxy for AOP | Java class hierarchy |
+|                      | Decorator                      | Proxy                   | Inheritance          |
+| -------------------- | ------------------------------ | ----------------------- | -------------------- |
+| Purpose              | Add behavior dynamically       | Control access          | Extend type          |
+| Wraps Same Interface | Yes                            | Yes                     | No                   |
+| Multiple additions   | Stack decorators               | Usually one proxy       | Deep hierarchy       |
+| Runtime flexibility  | Yes                            | Limited                 | No (compile-time)    |
+| Spring Usage         | `@Transactional`, `@Cacheable` | CGLIB/JDK proxy for AOP | Java class hierarchy |
 
 ---
 
-## 8. Facade
+### 8. Facade
 
-### Definition
+#### Definition
+
 Provides a **simplified interface** to a complex subsystem.
 
-### Mental Model
+#### Mental Model
+
 A **hotel concierge** — you ask them "arrange a dinner for me", and they coordinate reservations, transport, and booking. You don't deal with each subsystem.
 
 ```java
@@ -581,40 +609,42 @@ public class CheckoutFacade {
     private final PaymentService payment;
     private final ShippingService shipping;
     private final NotificationService notification;
-    
+
     public CheckoutResult checkout(CheckoutRequest request) {
         validator.validate(request.getOrder());
         inventory.reserve(request.getOrder().getItems());
         PaymentResult paymentResult = payment.charge(request.getPayment());
         Shipment shipment = shipping.createShipment(request.getOrder());
         notification.notifyCustomer(request.getUserId(), "Order confirmed: " + shipment.getTrackingId());
-        
+
         return CheckoutResult.success(shipment.getTrackingId());
     }
 }
 ```
 
-### Production Use Cases
+#### Production Use Cases
+
 - Service layer in Spring MVC (facade over repositories + domain services)
 - `SLF4J` facade over Log4j/Logback
 - Spring's `JdbcTemplate` (facade over JDBC)
 
 ---
 
-## 9. Proxy
+### 9. Proxy
 
-### Definition
+#### Definition
+
 Provides a **surrogate** object that controls access to the real object.
 
-### Types
+#### Types
 
-| Proxy Type | Purpose | Example |
-|-----------|---------|---------|
-| **Virtual Proxy** | Lazy initialization | Hibernate lazy loading |
-| **Protection Proxy** | Access control | Spring Security proxy |
-| **Remote Proxy** | Network transparency | OpenFeign client |
-| **Caching Proxy** | Cache results | Spring `@Cacheable` |
-| **Logging Proxy** | Log calls | AOP logging aspect |
+| Proxy Type           | Purpose              | Example                |
+| -------------------- | -------------------- | ---------------------- |
+| **Virtual Proxy**    | Lazy initialization  | Hibernate lazy loading |
+| **Protection Proxy** | Access control       | Spring Security proxy  |
+| **Remote Proxy**     | Network transparency | OpenFeign client       |
+| **Caching Proxy**    | Cache results        | Spring `@Cacheable`    |
+| **Logging Proxy**    | Log calls            | AOP logging aspect     |
 
 ```java
 // Protection proxy example
@@ -625,7 +655,7 @@ interface BankAccount {
 
 class RealBankAccount implements BankAccount {
     private BigDecimal balance;
-    
+
     public void transfer(BigDecimal amount, String toAccount) { balance = balance.subtract(amount); }
     public BigDecimal getBalance() { return balance; }
 }
@@ -633,7 +663,7 @@ class RealBankAccount implements BankAccount {
 class BankAccountProxy implements BankAccount {
     private final RealBankAccount real;
     private final User currentUser;
-    
+
     public void transfer(BigDecimal amount, String toAccount) {
         if (!currentUser.hasPermission("TRANSFER")) {
             throw new SecurityException("Transfer not permitted");
@@ -644,7 +674,7 @@ class BankAccountProxy implements BankAccount {
         real.transfer(amount, toAccount);
         auditLog("TRANSFER", currentUser, amount, toAccount);
     }
-    
+
     public BigDecimal getBalance() {
         if (!currentUser.hasPermission("READ_BALANCE")) throw new SecurityException();
         return real.getBalance();
@@ -652,7 +682,7 @@ class BankAccountProxy implements BankAccount {
 }
 ```
 
-### How Spring AOP Uses Proxy
+#### How Spring AOP Uses Proxy
 
 ```
 @Transactional → Spring creates CGLIB proxy wrapping your bean
@@ -666,9 +696,10 @@ When you call myService.save(), you're actually calling:
 
 ---
 
-## 10. Composite
+### 10. Composite
 
-### Definition
+#### Definition
+
 Composes objects into **tree structures** to represent part-whole hierarchies.
 
 ```java
@@ -683,7 +714,7 @@ interface FileSystemItem {
 class File implements FileSystemItem {
     private final String name;
     private final long size;
-    
+
     public String getName() { return name; }
     public long getSize() { return size; }
     public void print(String indent) {
@@ -695,10 +726,10 @@ class File implements FileSystemItem {
 class Directory implements FileSystemItem {
     private final String name;
     private final List<FileSystemItem> children = new ArrayList<>();
-    
+
     public void add(FileSystemItem item) { children.add(item); }
     public void remove(FileSystemItem item) { children.remove(item); }
-    
+
     public String getName() { return name; }
     public long getSize() {
         return children.stream().mapToLong(FileSystemItem::getSize).sum();
@@ -712,14 +743,16 @@ class Directory implements FileSystemItem {
 
 ---
 
-# Behavioral Patterns
+## Behavioral Patterns
 
-## 11. Strategy
+### 11. Strategy
 
-### Definition
+#### Definition
+
 Defines a family of algorithms, encapsulates each one, and makes them **interchangeable** at runtime.
 
-### Mental Model
+#### Mental Model
+
 **GPS navigation** — you can switch between Fastest Route, Shortest Route, or Avoid Highways. The destination doesn't change; only the algorithm to get there changes.
 
 ```java
@@ -742,15 +775,15 @@ class BubbleSort implements SortStrategy { // for small arrays
 // Context
 class DataProcessor {
     private SortStrategy strategy;
-    
+
     public DataProcessor(SortStrategy strategy) {
         this.strategy = strategy;
     }
-    
+
     public void setStrategy(SortStrategy strategy) { // swap at runtime
         this.strategy = strategy;
     }
-    
+
     public void process(int[] data) {
         strategy.sort(data);
     }
@@ -769,7 +802,7 @@ interface PaymentStrategy {
 class CheckoutService {
     @Autowired
     private Map<String, PaymentStrategy> strategies; // Spring injects all implementations
-    
+
     public PaymentResult checkout(Order order, String paymentMethod) {
         PaymentStrategy strategy = strategies.get(paymentMethod);
         if (strategy == null) throw new IllegalArgumentException("Unknown payment method");
@@ -778,23 +811,25 @@ class CheckoutService {
 }
 ```
 
-### Strategy vs Factory
+#### Strategy vs Factory
 
-| | Strategy | Factory |
-|--|----------|---------|
-| Focus | **How** to do something (algorithm) | **What** to create (object) |
-| Runtime swap | Yes | Typically no |
-| Contains logic | Yes | No (creates objects) |
-| Use When | Algorithm varies | Object type varies |
+|                | Strategy                            | Factory                     |
+| -------------- | ----------------------------------- | --------------------------- |
+| Focus          | **How** to do something (algorithm) | **What** to create (object) |
+| Runtime swap   | Yes                                 | Typically no                |
+| Contains logic | Yes                                 | No (creates objects)        |
+| Use When       | Algorithm varies                    | Object type varies          |
 
 ---
 
-## 12. Observer
+### 12. Observer
 
-### Definition
+#### Definition
+
 Defines a one-to-many dependency: when one object changes state, **all dependents are notified automatically**.
 
-### Mental Model
+#### Mental Model
+
 **YouTube subscription** — when a creator posts, all subscribers get notified. Creator doesn't know subscribers; subscribers don't know each other.
 
 ```java
@@ -806,16 +841,16 @@ interface OrderEventListener {
 // Subject (Observable)
 class OrderService {
     private final List<OrderEventListener> listeners = new ArrayList<>();
-    
+
     public void subscribe(OrderEventListener listener) { listeners.add(listener); }
     public void unsubscribe(OrderEventListener listener) { listeners.remove(listener); }
-    
+
     public Order placeOrder(OrderRequest request) {
         Order order = createOrder(request);
         notifyListeners(new OrderEvent(OrderEventType.ORDER_PLACED, order));
         return order;
     }
-    
+
     private void notifyListeners(OrderEvent event) {
         listeners.forEach(l -> l.onOrderEvent(event));
     }
@@ -837,7 +872,7 @@ class EmailNotificationListener implements OrderEventListener {
 }
 ```
 
-### Spring's Event System (Observer built-in)
+#### Spring's Event System (Observer built-in)
 
 ```java
 // Event class
@@ -854,7 +889,7 @@ public class OrderPlacedEvent extends ApplicationEvent {
 public class OrderService {
     @Autowired
     private ApplicationEventPublisher publisher;
-    
+
     public Order placeOrder(OrderRequest request) {
         Order order = createOrder(request);
         publisher.publishEvent(new OrderPlacedEvent(this, order));
@@ -881,21 +916,22 @@ public class EmailListener {
 }
 ```
 
-### Observer vs Pub/Sub
+#### Observer vs Pub/Sub
 
-| | Observer | Pub/Sub |
-|--|----------|---------|
-| Coupling | Subject knows observer interface | Publisher doesn't know subscribers |
-| Channel | Direct | Via message broker (Kafka, RabbitMQ) |
-| Async | Optional | Usually async |
-| Distributed | Same JVM | Cross-service |
-| Example | Spring Events | Kafka events |
+|             | Observer                         | Pub/Sub                              |
+| ----------- | -------------------------------- | ------------------------------------ |
+| Coupling    | Subject knows observer interface | Publisher doesn't know subscribers   |
+| Channel     | Direct                           | Via message broker (Kafka, RabbitMQ) |
+| Async       | Optional                         | Usually async                        |
+| Distributed | Same JVM                         | Cross-service                        |
+| Example     | Spring Events                    | Kafka events                         |
 
 ---
 
-## 13. Command
+### 13. Command
 
-### Definition
+#### Definition
+
 Encapsulates a request as an object, allowing you to **queue, log, undo, and retry** operations.
 
 ```java
@@ -909,12 +945,12 @@ interface Command {
 class TransferMoneyCommand implements Command {
     private final Account from, to;
     private final BigDecimal amount;
-    
+
     public void execute() {
         from.debit(amount);
         to.credit(amount);
     }
-    
+
     public void undo() { // rollback
         to.debit(amount);
         from.credit(amount);
@@ -924,12 +960,12 @@ class TransferMoneyCommand implements Command {
 // Command processor with history
 class CommandProcessor {
     private final Deque<Command> history = new ArrayDeque<>();
-    
+
     public void execute(Command cmd) {
         cmd.execute();
         history.push(cmd);
     }
-    
+
     public void undoLast() {
         if (!history.isEmpty()) {
             history.pop().undo();
@@ -938,7 +974,8 @@ class CommandProcessor {
 }
 ```
 
-### Production Use Cases
+#### Production Use Cases
+
 - Database transaction undo logs
 - Browser "back" button
 - Game move history
@@ -946,12 +983,14 @@ class CommandProcessor {
 
 ---
 
-## 14. Template Method
+### 14. Template Method
 
-### Definition
+#### Definition
+
 Defines the **skeleton of an algorithm** in a base class, deferring some steps to subclasses.
 
-### Mental Model
+#### Mental Model
+
 A **recipe book** defines the process (prepare → cook → plate → serve), but each recipe fills in different ingredients.
 
 ```java
@@ -965,13 +1004,13 @@ abstract class DataImporter {
         saveToDatabase(transformed);         // step 4
         sendImportReport();                  // step 5 (optional hook)
     }
-    
+
     protected abstract String readData(String source);
     protected abstract String validateData(String data);
     protected abstract String transformData(String data);
-    
+
     protected void saveToDatabase(String data) { /* default impl */ }
-    
+
     protected void sendImportReport() {
         // hook — subclasses can override or leave as-is
     }
@@ -990,32 +1029,35 @@ class XMLImporter extends DataImporter {
 }
 ```
 
-### Spring Usage
+#### Spring Usage
+
 - `JdbcTemplate` — template for DB operations
 - `RestTemplate` — template for HTTP calls
 - `AbstractSecurityInterceptor` — template for security checks
 
 ---
 
-## 15. Chain of Responsibility
+### 15. Chain of Responsibility
 
-### Definition
+#### Definition
+
 Passes a request along a **chain of handlers**, where each handler decides to process or pass along.
 
-### Mental Model
+#### Mental Model
+
 **Customer support escalation** — L1 → L2 → L3 → Manager. Each level tries to handle; if it can't, escalates.
 
 ```java
 abstract class RequestHandler {
     private RequestHandler next;
-    
+
     public RequestHandler setNext(RequestHandler next) {
         this.next = next;
         return next;
     }
-    
+
     public abstract boolean handle(HttpRequest request);
-    
+
     protected boolean passToNext(HttpRequest request) {
         if (next != null) return next.handle(request);
         return false;
@@ -1061,9 +1103,10 @@ chain.setNext(new AuthorizationHandler())
 
 ---
 
-## 16. State
+### 16. State
 
-### Definition
+#### Definition
+
 Allows an object to **alter its behavior when its internal state changes**. The object will appear to change its class.
 
 ```java
@@ -1091,7 +1134,7 @@ class ConfirmedState implements OrderState {
 
 class OrderContext {
     private OrderState state = new PendingState();
-    
+
     public void setState(OrderState state) { this.state = state; }
     public void confirm() { state.confirm(this); }
     public void ship() { state.ship(this); }
@@ -1102,9 +1145,10 @@ class OrderContext {
 
 ---
 
-## 17. Mediator
+### 17. Mediator
 
-### Definition
+#### Definition
+
 Defines an object that **encapsulates communication** between multiple objects, reducing direct dependencies.
 
 ```java
@@ -1116,9 +1160,9 @@ interface ChatMediator {
 
 class ChatRoom implements ChatMediator {
     private List<User> users = new ArrayList<>();
-    
+
     public void addUser(User user) { users.add(user); }
-    
+
     public void sendMessage(String message, User sender) {
         users.stream()
             .filter(u -> !u.equals(sender))
@@ -1129,58 +1173,58 @@ class ChatRoom implements ChatMediator {
 
 ---
 
-# Pattern Comparisons
+## Pattern Comparisons
 
-## Strategy vs Factory
+### Strategy vs Factory
 
-| Dimension | Strategy | Factory |
-|-----------|----------|---------|
-| **Intent** | Vary the *algorithm* at runtime | Vary the *object type* at creation |
-| **Has logic** | Yes (algorithm) | No (just creates) |
-| **Runtime swap** | Yes | Usually no |
-| **Example** | Payment method selection | Notification channel creation |
+| Dimension        | Strategy                        | Factory                            |
+| ---------------- | ------------------------------- | ---------------------------------- |
+| **Intent**       | Vary the _algorithm_ at runtime | Vary the _object type_ at creation |
+| **Has logic**    | Yes (algorithm)                 | No (just creates)                  |
+| **Runtime swap** | Yes                             | Usually no                         |
+| **Example**      | Payment method selection        | Notification channel creation      |
 
-## Decorator vs Proxy
+### Decorator vs Proxy
 
-| Dimension | Decorator | Proxy |
-|-----------|-----------|-------|
-| **Intent** | Add/enhance behavior | Control access / surrogate |
-| **Client aware** | Usually | Usually not |
-| **Stacking** | Common (multiple decorators) | Usually one proxy |
-| **Examples** | InputStream wrappers | CGLIB proxies, Hibernate lazy load |
+| Dimension        | Decorator                    | Proxy                              |
+| ---------------- | ---------------------------- | ---------------------------------- |
+| **Intent**       | Add/enhance behavior         | Control access / surrogate         |
+| **Client aware** | Usually                      | Usually not                        |
+| **Stacking**     | Common (multiple decorators) | Usually one proxy                  |
+| **Examples**     | InputStream wrappers         | CGLIB proxies, Hibernate lazy load |
 
-## Builder vs Factory
+### Builder vs Factory
 
-| Dimension | Builder | Factory |
-|-----------|---------|---------|
-| **Focus** | How to *construct* (step by step) | What *type* to create |
-| **Complexity** | Complex objects, many params | Simple to medium objects |
-| **Returns** | Same type | Different subtypes |
-| **Examples** | `HttpRequest.Builder`, `StringBuilder` | `Calendar.getInstance()` |
+| Dimension      | Builder                                | Factory                  |
+| -------------- | -------------------------------------- | ------------------------ |
+| **Focus**      | How to _construct_ (step by step)      | What _type_ to create    |
+| **Complexity** | Complex objects, many params           | Simple to medium objects |
+| **Returns**    | Same type                              | Different subtypes       |
+| **Examples**   | `HttpRequest.Builder`, `StringBuilder` | `Calendar.getInstance()` |
 
-## Observer vs Pub/Sub
+### Observer vs Pub/Sub
 
-| Dimension | Observer | Pub/Sub |
-|-----------|----------|---------|
-| **Coupling** | Subject knows observer interface | Zero coupling via broker |
-| **Scope** | Usually same process | Cross-process, distributed |
-| **Ordering** | Synchronous (usually) | Asynchronous |
-| **Examples** | Spring `ApplicationEvent` | Kafka, RabbitMQ, SNS |
+| Dimension    | Observer                         | Pub/Sub                    |
+| ------------ | -------------------------------- | -------------------------- |
+| **Coupling** | Subject knows observer interface | Zero coupling via broker   |
+| **Scope**    | Usually same process             | Cross-process, distributed |
+| **Ordering** | Synchronous (usually)            | Asynchronous               |
+| **Examples** | Spring `ApplicationEvent`        | Kafka, RabbitMQ, SNS       |
 
-## Composition vs Inheritance
+### Composition vs Inheritance
 
-| | Composition | Inheritance |
-|--|-------------|-------------|
-| Relationship | HAS-A | IS-A |
-| Coupling | Low | High (fragile base class) |
-| Flexibility | Swap at runtime | Fixed at compile time |
-| Testing | Easy to mock | Hard to isolate |
-| Principle | Favor composition | Use only for true IS-A |
-| Example | `OrderService` has `PaymentStrategy` | `Square` extends `Rectangle` (LSP violation!) |
+|              | Composition                          | Inheritance                                   |
+| ------------ | ------------------------------------ | --------------------------------------------- |
+| Relationship | HAS-A                                | IS-A                                          |
+| Coupling     | Low                                  | High (fragile base class)                     |
+| Flexibility  | Swap at runtime                      | Fixed at compile time                         |
+| Testing      | Easy to mock                         | Hard to isolate                               |
+| Principle    | Favor composition                    | Use only for true IS-A                        |
+| Example      | `OrderService` has `PaymentStrategy` | `Square` extends `Rectangle` (LSP violation!) |
 
 ---
 
-## Summary — Design Patterns Cheatsheet
+### Summary — Design Patterns Cheatsheet
 
 ```
 CREATIONAL

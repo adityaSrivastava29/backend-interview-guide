@@ -26,9 +26,9 @@ nav_order: 10
 
 ---
 
-# 1. Kafka Architecture
+## 1. Kafka Architecture
 
-## Core Components
+### Core Components
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -60,39 +60,39 @@ nav_order: 10
 └─────────────────┘         └─────────────────────┘
 ```
 
-## Why Kafka?
+### Why Kafka?
 
-| Traditional Message Queue (RabbitMQ) | Kafka |
-|--------------------------------------|-------|
-| Message deleted after consumption | Message retained (configurable, e.g., 7 days) |
-| Push-based | Pull-based (consumer controls rate) |
-| 1 consumer per message (competing) | Multiple consumer groups read independently |
-| No replay | Replay from any offset |
-| Limited throughput | Millions of messages/sec |
-| No ordering | Ordering within partition |
-| No stream processing | Kafka Streams built-in |
+| Traditional Message Queue (RabbitMQ) | Kafka                                         |
+| ------------------------------------ | --------------------------------------------- |
+| Message deleted after consumption    | Message retained (configurable, e.g., 7 days) |
+| Push-based                           | Pull-based (consumer controls rate)           |
+| 1 consumer per message (competing)   | Multiple consumer groups read independently   |
+| No replay                            | Replay from any offset                        |
+| Limited throughput                   | Millions of messages/sec                      |
+| No ordering                          | Ordering within partition                     |
+| No stream processing                 | Kafka Streams built-in                        |
 
 ---
 
-# 2. Topics, Partitions & Offsets
+## 2. Topics, Partitions & Offsets
 
-## Topic
+### Topic
 
 A **Topic** is a logical stream of records. Think of it like a database table or a log file.
 
-## Partition
+### Partition
 
 A topic is split into **Partitions** — each partition is an ordered, immutable sequence of records.
 
 ```
 orders-topic
-├── Partition 0: [0] {order1} [1] {order5} [2] {order9} → 
+├── Partition 0: [0] {order1} [1] {order5} [2] {order9} →
 ├── Partition 1: [0] {order2} [1] {order6} [2] {order10} →
 ├── Partition 2: [0] {order3} [1] {order7} [2] {order11} →
 └── Partition 3: [0] {order4} [1] {order8} [2] {order12} →
 ```
 
-## Offset
+### Offset
 
 An **Offset** is the unique sequential position of a record within a partition.
 
@@ -104,7 +104,7 @@ Record: [msg_A] [msg_B] [msg_C] [msg_D] [msg_E] →
 Consumer has read up to offset 2 → committed offset = 3 (next to read)
 ```
 
-## Partitioning Strategy
+### Partitioning Strategy
 
 ```java
 // Message WITHOUT key: round-robin across partitions
@@ -115,7 +115,7 @@ producer.send(new ProducerRecord<>("orders", orderId, orderJson));
 // All events for orderId "ORD-123" → always same partition → ordered processing
 ```
 
-## How Many Partitions?
+### How Many Partitions?
 
 ```
 Throughput per partition:
@@ -128,16 +128,16 @@ Example:
   Target: 500 MB/s write
   Per partition: 10 MB/s
   Min partitions: 500/10 = 50 partitions
-  
+
 Rule of thumb: Start with 2x-3x expected consumer count
 Avoid over-partitioning: each partition has overhead (file handles, memory)
 ```
 
 ---
 
-# 3. Producers
+## 3. Producers
 
-## Producer Internals
+### Producer Internals
 
 ```
 Producer.send(record)
@@ -159,48 +159,48 @@ Followers replicate (if acks=all)
 Acknowledgment to producer
 ```
 
-## Producer Configuration
+### Producer Configuration
 
 ```java
 Map<String, Object> producerConfig = Map.of(
     ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "kafka1:9092,kafka2:9092,kafka3:9092",
     ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
     ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class,
-    
+
     // Acknowledgment policy
     ProducerConfig.ACKS_CONFIG, "all",         // wait for all replicas to ack
-    
+
     // Retries
     ProducerConfig.RETRIES_CONFIG, 3,
     ProducerConfig.RETRY_BACKOFF_MS_CONFIG, 100,
     ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120000,
-    
+
     // Batching (improves throughput)
     ProducerConfig.BATCH_SIZE_CONFIG, 32768,     // 32KB batch
     ProducerConfig.LINGER_MS_CONFIG, 10,         // wait up to 10ms to accumulate batch
     ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy",  // compress batches
-    
+
     // Idempotent producer (prevents duplicates from retries)
     ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true,
-    
+
     // Buffer size
     ProducerConfig.BUFFER_MEMORY_CONFIG, 33554432L  // 32MB buffer
 );
 ```
 
-## Producer Acknowledgment (acks)
+### Producer Acknowledgment (acks)
 
-| acks | Meaning | Durability | Performance |
-|------|---------|------------|-------------|
-| `0` | No ack — fire and forget | Lowest (data loss possible) | Highest |
-| `1` | Leader wrote | Medium (lost if leader dies before replication) | Medium |
-| `all` / `-1` | All in-sync replicas wrote | Highest (no data loss) | Lowest |
+| acks         | Meaning                    | Durability                                      | Performance |
+| ------------ | -------------------------- | ----------------------------------------------- | ----------- |
+| `0`          | No ack — fire and forget   | Lowest (data loss possible)                     | Highest     |
+| `1`          | Leader wrote               | Medium (lost if leader dies before replication) | Medium      |
+| `all` / `-1` | All in-sync replicas wrote | Highest (no data loss)                          | Lowest      |
 
 ---
 
-# 4. Consumers & Consumer Groups
+## 4. Consumers & Consumer Groups
 
-## Consumer Group
+### Consumer Group
 
 Multiple consumers in the **same group** divide partitions among themselves — each partition assigned to exactly one consumer in the group.
 
@@ -218,7 +218,7 @@ Consumer Group: "notification-service" (reads independently!)
 
 Key insight: **Two consumer groups read the same topic independently** — each group has its own offset tracking.
 
-## Offset Management
+### Offset Management
 
 ```
 AUTO COMMIT: Consumer commits offsets automatically every auto.commit.interval.ms
@@ -230,9 +230,9 @@ MANUAL COMMIT: Application commits after successful processing
 
 ---
 
-# 5. Spring Kafka — Producer
+## 5. Spring Kafka — Producer
 
-## Setup
+### Setup
 
 ```xml
 <dependency>
@@ -255,18 +255,18 @@ spring:
       compression-type: snappy
       properties:
         enable.idempotence: true
-        max.in.flight.requests.per.connection: 5  # with idempotence, max 5
+        max.in.flight.requests.per.connection: 5 # with idempotence, max 5
 ```
 
-## Producer Code
+### Producer Code
 
 ```java
 @Service
 public class OrderEventPublisher {
-    
+
     @Autowired
     private KafkaTemplate<String, OrderEvent> kafkaTemplate;
-    
+
     // Simple send
     public void publishOrderPlaced(Order order) {
         OrderEvent event = OrderEvent.builder()
@@ -277,15 +277,15 @@ public class OrderEventPublisher {
             .totalAmount(order.getTotalAmount())
             .occurredAt(Instant.now())
             .build();
-        
+
         // Send with order ID as key → same order events go to same partition
         kafkaTemplate.send("order-events", order.getId().toString(), event);
     }
-    
+
     // Send with callback (async)
     public void publishWithCallback(Order order) {
         OrderEvent event = buildEvent(order);
-        
+
         kafkaTemplate.send("order-events", order.getId().toString(), event)
             .whenComplete((result, ex) -> {
                 if (ex == null) {
@@ -298,20 +298,20 @@ public class OrderEventPublisher {
                 }
             });
     }
-    
+
     // Send and wait for acknowledgment (synchronous — blocks caller thread)
     public void publishSync(Order order) throws ExecutionException, InterruptedException {
         OrderEvent event = buildEvent(order);
-        RecordMetadata metadata = kafkaTemplate.send("order-events", 
+        RecordMetadata metadata = kafkaTemplate.send("order-events",
             order.getId().toString(), event).get(); // blocks!
-        log.info("Confirmed: partition={}, offset={}", 
+        log.info("Confirmed: partition={}, offset={}",
             metadata.partition(), metadata.offset());
     }
-    
+
     // Transactional producer (all or nothing)
     @Transactional("kafkaTransactionManager")
     public void publishTransactionally(List<Order> orders) {
-        orders.forEach(order -> 
+        orders.forEach(order ->
             kafkaTemplate.send("order-events", order.getId().toString(), buildEvent(order)));
         // All messages committed atomically, or none
     }
@@ -320,9 +320,9 @@ public class OrderEventPublisher {
 
 ---
 
-# 6. Spring Kafka — Consumer
+## 6. Spring Kafka — Consumer
 
-## Configuration
+### Configuration
 
 ```yaml
 spring:
@@ -331,23 +331,23 @@ spring:
       group-id: inventory-service
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      auto-offset-reset: earliest    # start from beginning if no committed offset
-      enable-auto-commit: false      # manual commit for reliability
-      max-poll-records: 500          # max records per poll
+      auto-offset-reset: earliest # start from beginning if no committed offset
+      enable-auto-commit: false # manual commit for reliability
+      max-poll-records: 500 # max records per poll
       properties:
         spring.json.trusted.packages: "com.example.events"
     listener:
-      ack-mode: MANUAL_IMMEDIATE     # commit after each record
-      concurrency: 3                 # 3 threads = up to 3 partitions per instance
-      type: BATCH                    # or SINGLE for one record at a time
+      ack-mode: MANUAL_IMMEDIATE # commit after each record
+      concurrency: 3 # 3 threads = up to 3 partitions per instance
+      type: BATCH # or SINGLE for one record at a time
 ```
 
-## Consumer Code
+### Consumer Code
 
 ```java
 @Component
 public class OrderEventConsumer {
-    
+
     // Single message consumer
     @KafkaListener(
         topics = "order-events",
@@ -359,15 +359,15 @@ public class OrderEventConsumer {
             @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
             @Header(KafkaHeaders.OFFSET) long offset,
             Acknowledgment ack) {
-        
+
         try {
             log.info("Processing event: {} from partition={} offset={}",
                 event.getEventId(), partition, offset);
-            
+
             inventoryService.reserveStock(event.getOrderId(), event.getItems());
-            
+
             ack.acknowledge(); // commit offset ONLY after successful processing
-            
+
         } catch (RetryableException e) {
             // Don't commit → message will be redelivered
             log.warn("Retryable error, will retry: {}", e.getMessage());
@@ -378,15 +378,15 @@ public class OrderEventConsumer {
             ack.acknowledge(); // commit to skip the poison pill message
         }
     }
-    
+
     // Batch consumer — more efficient
     @KafkaListener(topics = "order-events", groupId = "batch-inventory-service")
     public void consumeBatch(
             List<OrderEvent> events,
             Acknowledgment ack) {
-        
+
         log.info("Processing batch of {} events", events.size());
-        
+
         try {
             inventoryService.reserveStockBatch(events);
             ack.acknowledge();
@@ -395,7 +395,7 @@ public class OrderEventConsumer {
             // Handle partial failures...
         }
     }
-    
+
     // Multiple topics
     @KafkaListener(topics = {"order-events", "payment-events"})
     public void consumeMultipleTopics(ConsumerRecord<String, String> record) {
@@ -405,43 +405,43 @@ public class OrderEventConsumer {
 }
 ```
 
-## Dead Letter Topic (DLT)
+### Dead Letter Topic (DLT)
 
 ```java
 @Configuration
 public class KafkaErrorHandlingConfig {
-    
+
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, OrderEvent> 
+    public ConcurrentKafkaListenerContainerFactory<String, OrderEvent>
             kafkaListenerContainerFactory(
                 ConsumerFactory<String, OrderEvent> cf,
                 KafkaTemplate<String, OrderEvent> template) {
-        
+
         var factory = new ConcurrentKafkaListenerContainerFactory<String, OrderEvent>();
         factory.setConsumerFactory(cf);
-        
+
         // Dead Letter configuration
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
             template,
             // Route to {topic}.DLT
             (record, ex) -> new TopicPartition(record.topic() + ".DLT", record.partition())
         );
-        
+
         // Retry 3 times with 1s backoff, then send to DLT
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
             recoverer,
             new FixedBackOff(1000L, 3)
         );
-        
+
         // Don't retry on these exceptions
         errorHandler.addNotRetryableExceptions(
             IllegalArgumentException.class,
             JsonParseException.class
         );
-        
+
         factory.setCommonErrorHandler(errorHandler);
         factory.getContainerProperties().setAckMode(AckMode.MANUAL_IMMEDIATE);
-        
+
         return factory;
     }
 }
@@ -451,13 +451,13 @@ public class KafkaErrorHandlingConfig {
 public void handleDeadLetter(
         ConsumerRecord<String, OrderEvent> record,
         @Header(KafkaHeaders.EXCEPTION_MESSAGE) String errorMessage) {
-    
+
     log.error("DLT message received from partition {} offset {}: {}",
         record.partition(), record.offset(), errorMessage);
-    
+
     // Alert operations team
     alertingService.sendAlert("DLT message: " + errorMessage);
-    
+
     // Or store in DB for manual investigation
     dltEventRepository.save(DltEvent.from(record, errorMessage));
 }
@@ -465,17 +465,17 @@ public void handleDeadLetter(
 
 ---
 
-# 7. Delivery Guarantees
+## 7. Delivery Guarantees
 
-## Three Levels
+### Three Levels
 
-| Guarantee | Description | Risk | When to Use |
-|-----------|-------------|------|-------------|
-| **At-most-once** | Fire and forget, no retry | Data loss possible | Metrics, logs (loss OK) |
-| **At-least-once** | Retry on failure | Duplicate processing | Most use cases (handle idempotency) |
-| **Exactly-once** | No loss, no duplicate | Complex, overhead | Payments, financial |
+| Guarantee         | Description               | Risk                 | When to Use                         |
+| ----------------- | ------------------------- | -------------------- | ----------------------------------- |
+| **At-most-once**  | Fire and forget, no retry | Data loss possible   | Metrics, logs (loss OK)             |
+| **At-least-once** | Retry on failure          | Duplicate processing | Most use cases (handle idempotency) |
+| **Exactly-once**  | No loss, no duplicate     | Complex, overhead    | Payments, financial                 |
 
-## At-Least-Once (Default)
+### At-Least-Once (Default)
 
 ```java
 // Producer: acks=all + retries + idempotent=true
@@ -488,7 +488,7 @@ public void handleDeadLetter(
 → Duplicate! Handle with idempotency check.
 ```
 
-## Exactly-Once (Transactional API)
+### Exactly-Once (Transactional API)
 
 ```java
 // Producer: enable.idempotence=true + transactional.id
@@ -518,9 +518,9 @@ public void processExactlyOnce(OrderEvent event, Acknowledgment ack) {
 
 ---
 
-# 8. Consumer Rebalancing
+## 8. Consumer Rebalancing
 
-## What is Rebalancing?
+### What is Rebalancing?
 
 When consumers join or leave a group, Kafka **reassigns partitions** among available consumers.
 
@@ -528,18 +528,18 @@ When consumers join or leave a group, Kafka **reassigns partitions** among avail
 Initial state: 4 partitions, 2 consumers
   Consumer A: P0, P1
   Consumer B: P2, P3
-  
+
 Consumer C joins:
   Consumer A: P0, P1 ← gets rebalanced
   Consumer B: P2     ← gets rebalanced
   Consumer C: P3
-  
+
 Consumer A dies:
   Consumer B: P0, P1, P2
   Consumer C: P3
 ```
 
-## Problem: Rebalancing Causes Processing Gaps
+### Problem: Rebalancing Causes Processing Gaps
 
 ```
 During rebalance:
@@ -549,7 +549,7 @@ During rebalance:
 → Latency spike, processing pause
 ```
 
-## Solution: Cooperative Sticky Rebalancing
+### Solution: Cooperative Sticky Rebalancing
 
 ```yaml
 spring:
@@ -561,23 +561,23 @@ spring:
         # Consumers not affected can keep processing
 ```
 
-## Preventing Rebalance During Processing
+### Preventing Rebalance During Processing
 
 ```yaml
 spring:
   kafka:
     consumer:
-      max-poll-interval-ms: 300000    # 5 min — max time between polls (must be > processing time)
-      session-timeout-ms: 30000       # broker considers consumer dead if no heartbeat in 30s
-      heartbeat-interval-ms: 10000   # heartbeat every 10s (must be < session-timeout)
-      max-poll-records: 100           # fewer records → faster processing → fewer rebalance triggers
+      max-poll-interval-ms: 300000 # 5 min — max time between polls (must be > processing time)
+      session-timeout-ms: 30000 # broker considers consumer dead if no heartbeat in 30s
+      heartbeat-interval-ms: 10000 # heartbeat every 10s (must be < session-timeout)
+      max-poll-records: 100 # fewer records → faster processing → fewer rebalance triggers
 ```
 
 ---
 
-# 9. Kafka Streams
+## 9. Kafka Streams
 
-## Definition
+### Definition
 
 Kafka Streams is a library for **stream processing** directly within Kafka — no separate processing cluster needed (unlike Spark/Flink).
 
@@ -585,35 +585,35 @@ Kafka Streams is a library for **stream processing** directly within Kafka — n
 @Configuration
 @EnableKafkaStreams
 public class OrderStreamProcessor {
-    
+
     @Bean
     public KStream<String, OrderEvent> orderEnrichmentStream(StreamsBuilder builder) {
         KStream<String, OrderEvent> orders = builder.stream("raw-orders",
             Consumed.with(Serdes.String(), new JsonSerde<>(OrderEvent.class)));
-        
+
         // Filter: only process completed orders
         KStream<String, OrderEvent> completedOrders = orders
             .filter((key, order) -> "COMPLETED".equals(order.getStatus()));
-        
+
         // Enrich: join with user data from a table (KTable backed by "users" topic)
         KTable<String, User> users = builder.table("users",
             Consumed.with(Serdes.String(), new JsonSerde<>(User.class)));
-        
+
         KStream<String, EnrichedOrder> enriched = completedOrders
             .join(users,
                 (order, user) -> new EnrichedOrder(order, user),
                 Joined.with(Serdes.String(), new JsonSerde<>(OrderEvent.class), new JsonSerde<>(User.class)));
-        
+
         // Aggregate: count orders per user in 1-hour windows
         KTable<Windowed<String>, Long> orderCounts = orders
             .groupByKey()
             .windowedBy(TimeWindows.ofSizeWithNoGrace(Duration.ofHours(1)))
             .count();
-        
+
         // Write to output topic
         enriched.to("enriched-orders",
             Produced.with(Serdes.String(), new JsonSerde<>(EnrichedOrder.class)));
-        
+
         return enriched;
     }
 }
@@ -621,28 +621,28 @@ public class OrderStreamProcessor {
 
 ---
 
-# 10. Production Patterns & Problems
+## 10. Production Patterns & Problems
 
-## Pattern 1: Idempotent Consumer
+### Pattern 1: Idempotent Consumer
 
 ```java
 @Component
 public class IdempotentOrderConsumer {
-    
+
     @Autowired
     private ProcessedEventRepository processedEventRepo;
-    
+
     @KafkaListener(topics = "order-events")
     @Transactional
     public void process(OrderEvent event, Acknowledgment ack) {
-        
+
         // Idempotency check: use eventId as unique key
         if (processedEventRepo.existsByEventId(event.getEventId())) {
             log.info("Duplicate event skipped: {}", event.getEventId());
             ack.acknowledge();
             return;
         }
-        
+
         try {
             inventoryService.reserve(event);
             processedEventRepo.save(new ProcessedEvent(event.getEventId(), Instant.now()));
@@ -655,7 +655,7 @@ public class IdempotentOrderConsumer {
 }
 ```
 
-## Pattern 2: Message Ordering Guarantee
+### Pattern 2: Message Ordering Guarantee
 
 ```java
 // Ensure all events for an order go to same partition → guaranteed order
@@ -669,38 +669,43 @@ producer.send(new ProducerRecord<>(
 // → Events for same orderId arrive in order
 ```
 
-## Problem: Consumer Lag
+### Problem: Consumer Lag
 
 **Symptom:** Kafka consumer lag growing (messages piling up faster than consumed).
 
 **Diagnosis:**
+
 ```bash
 # Check consumer group lag
 kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
   --group inventory-service --describe
 
-# Output: 
+# Output:
 # TOPIC          PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
 # order-events   0          5000            15000           10000  ← 10k lag!
 ```
 
 **Solutions:**
+
 1. **Increase consumer instances** (scale deployment, max = num partitions)
 2. **Batch processing** — increase `max.poll.records`
 3. **Parallel processing within consumer**:
+
 ```java
 @KafkaListener(topics = "order-events", concurrency = "6") // 6 consumer threads
 public void process(OrderEvent event, Acknowledgment ack) { ... }
 ```
+
 4. **Speed up processing** — optimize DB queries, async processing
 
-## Problem: Poison Pill Message
+### Problem: Poison Pill Message
 
 **Symptom:** Consumer stuck, same error repeating, consumer lag growing.
 
 **Cause:** Message with invalid payload that can't be deserialized or processed.
 
 **Solution:**
+
 ```java
 // Deserializer that doesn't throw on error
 props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
@@ -716,37 +721,43 @@ errorHandler.addNotRetryableExceptions(DeserializationException.class);
 
 ---
 
-# 11. Interview Questions
+## 11. Interview Questions
 
-### Basic
+#### Basic
+
 1. What is Apache Kafka and what problems does it solve?
 2. What is the difference between a topic and a partition?
 3. What is a consumer group?
 
-### Intermediate
+#### Intermediate
+
 4. Explain the three delivery guarantees in Kafka.
 5. How does Kafka ensure message ordering?
 6. What is consumer lag and how do you reduce it?
 
-### Advanced
+#### Advanced
+
 7. Explain the at-least-once vs exactly-once semantics implementation in Kafka.
 8. How does idempotent producer work internally?
 9. What is Consumer Rebalancing and how does Cooperative Sticky strategy improve it?
 10. How would you design a Kafka-based order processing pipeline with exactly-once semantics?
 
-### Scenario-Based
-11. *Your Kafka consumer group has 10 consumers but only 6 partitions. What happens?*
+#### Scenario-Based
+
+11. _Your Kafka consumer group has 10 consumers but only 6 partitions. What happens?_
+
     - 6 consumers active (one per partition), 4 consumers IDLE. More consumers than partitions is wasteful.
 
-12. *How would you handle a "poison pill" message that causes the consumer to crash on every read?*
+12. _How would you handle a "poison pill" message that causes the consumer to crash on every read?_
+
     - Retry N times → Dead Letter Topic → manual investigation → fix and replay
 
-13. *Order service publishes order-placed, inventory reserves stock, but inventory consumer crashes mid-processing. How do you prevent duplicate reservations on restart?*
+13. _Order service publishes order-placed, inventory reserves stock, but inventory consumer crashes mid-processing. How do you prevent duplicate reservations on restart?_
     - Idempotent consumer with `event_id` unique constraint check
 
 ---
 
-## Summary — Kafka Cheatsheet
+### Summary — Kafka Cheatsheet
 
 ```
 Core Concepts:
@@ -761,13 +772,13 @@ Producer acks:
   acks=0: fire and forget (data loss possible)
   acks=1: leader acked (replica lag risk)
   acks=all: all ISR acked (safest)
-  
+
 Enable idempotence: prevents duplicates from producer retries
 
 Consumer:
   auto-commit: risky (commit before process complete)
   manual commit (MANUAL_IMMEDIATE): commit after success
-  
+
 Delivery Guarantees:
   at-most-once: no retry
   at-least-once: retry + idempotent consumer

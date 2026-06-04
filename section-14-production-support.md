@@ -24,9 +24,9 @@ nav_order: 15
 
 ---
 
-# 1. Debugging Methodology
+## 1. Debugging Methodology
 
-## SRE Incident Response Playbook
+### SRE Incident Response Playbook
 
 ```
 1. DETECT: Alert fires or user reports issue
@@ -41,7 +41,7 @@ nav_order: 15
 7. POSTMORTEM: Document timeline, root cause, action items
 ```
 
-## The Most Valuable Production Debugging Commands
+### The Most Valuable Production Debugging Commands
 
 ```bash
 # 1. See recent deployments
@@ -71,16 +71,17 @@ kubectl cp order-service-xyz:/tmp/heap.hprof ./heap.hprof
 
 ---
 
-# 2. JVM & Memory Issues
+## 2. JVM & Memory Issues
 
-## Incident: OutOfMemoryError: Java Heap Space
+### Incident: OutOfMemoryError: Java Heap Space
 
-### Symptoms
+#### Symptoms
+
 - `java.lang.OutOfMemoryError: Java heap space` in logs
 - Pod crashes and restarts (Kubernetes OOMKilled)
 - GC time > 95% (CPU spike before OOM)
 
-### Investigation
+#### Investigation
 
 ```bash
 # Check if OOMKilled
@@ -100,9 +101,10 @@ kubectl exec -it order-service-xyz -- jmap -histo:live 1 | head -30
 # Look for: large counts, large bytes, unexpected classes
 ```
 
-### Common Root Causes & Fixes
+#### Common Root Causes & Fixes
 
 **1. Unbounded Cache**
+
 ```java
 // BAD: Cache with no eviction — grows forever!
 private Map<String, Product> productCache = new HashMap<>();
@@ -123,10 +125,11 @@ public CacheManager cacheManager() {
 ```
 
 **2. Session/Connection Leak**
+
 ```java
 // BAD: InputStream not closed
 InputStream is = url.openStream();
-// ... process ... 
+// ... process ...
 // forgot to close → resource leak → eventually OOM
 
 // GOOD: try-with-resources
@@ -136,11 +139,12 @@ try (InputStream is = url.openStream()) {
 ```
 
 **3. Static Collection Growth**
+
 ```java
 // BAD: Static list grows forever with every request
 public class MetricsCollector {
     private static final List<RequestMetric> metrics = new ArrayList<>(); // DANGER
-    
+
     public void record(RequestMetric metric) {
         metrics.add(metric); // unbounded growth!
     }
@@ -150,7 +154,7 @@ public class MetricsCollector {
 // Or cap the list size
 ```
 
-## Incident: OutOfMemoryError: Metaspace
+### Incident: OutOfMemoryError: Metaspace
 
 ```bash
 # Symptoms: Metaspace full, class loading failure
@@ -167,7 +171,7 @@ java.lang.OutOfMemoryError: Metaspace
 -verbose:class 2>&1 | grep "Loaded" | wc -l  # count loaded classes over time
 ```
 
-## Incident: High GC Pause (STW > 2 seconds)
+### Incident: High GC Pause (STW > 2 seconds)
 
 ```bash
 # Enable GC logging
@@ -182,16 +186,17 @@ java.lang.OutOfMemoryError: Metaspace
 
 ---
 
-# 3. Database Performance Issues
+## 3. Database Performance Issues
 
-## Incident: Slow Query Causing API Timeout
+### Incident: Slow Query Causing API Timeout
 
-### Symptoms
+#### Symptoms
+
 - API endpoints timing out with 504
 - DB CPU at 100%
 - Slow query log filling up
 
-### Investigation
+#### Investigation
 
 ```sql
 -- PostgreSQL: Find slow queries currently running
@@ -209,7 +214,7 @@ LIMIT 10;
 
 -- Explain a slow query
 EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT o.*, u.name FROM orders o 
+SELECT o.*, u.name FROM orders o
 JOIN users u ON u.id = o.user_id
 WHERE o.status = 'PENDING'
 ORDER BY o.created_at DESC
@@ -221,7 +226,7 @@ LIMIT 20;
 -- Buffers: read=huge → lots of I/O, needs better caching or index
 ```
 
-### Fix: Add Missing Index
+#### Fix: Add Missing Index
 
 ```sql
 -- Missing index diagnosis
@@ -229,22 +234,23 @@ EXPLAIN SELECT * FROM orders WHERE user_id = 1001 AND status = 'PENDING';
 -- Seq Scan on orders (cost=0..450000) → BAD, full table scan!
 
 -- Add composite index
-CREATE INDEX CONCURRENTLY idx_orders_user_status 
-ON orders(user_id, status) 
+CREATE INDEX CONCURRENTLY idx_orders_user_status
+ON orders(user_id, status)
 WHERE status IN ('PENDING', 'PROCESSING'); -- partial index — only index relevant rows
 
 EXPLAIN SELECT * FROM orders WHERE user_id = 1001 AND status = 'PENDING';
 -- Index Scan using idx_orders_user_status → GOOD!
 ```
 
-## Incident: Connection Pool Exhaustion
+### Incident: Connection Pool Exhaustion
 
-### Symptoms
+#### Symptoms
+
 ```
 HikariPool-1 - Connection is not available, request timed out after 30000ms
 ```
 
-### Investigation & Fix
+#### Investigation & Fix
 
 ```bash
 # Check active connections
@@ -286,7 +292,7 @@ spring:
       max-lifetime: 1800000
 ```
 
-## Incident: Deadlock
+### Incident: Deadlock
 
 ```
 ERROR: could not serialize access due to concurrent update
@@ -304,11 +310,11 @@ ERROR: deadlock detected
 public void transferMoney(Account from, Account to, BigDecimal amount) {
     // Always lock by ID order (lower ID first)
     List<Long> ids = List.of(from.getId(), to.getId()).stream().sorted().toList();
-    
+
     // Lock both accounts in consistent order
     accountRepository.findByIdWithLock(ids.get(0));
     accountRepository.findByIdWithLock(ids.get(1));
-    
+
     from.debit(amount);
     to.credit(amount);
 }
@@ -322,9 +328,9 @@ public void updateOrder(Order order) { ... }
 
 ---
 
-# 4. Concurrency & Thread Issues
+## 4. Concurrency & Thread Issues
 
-## Incident: Thread Pool Exhaustion (API Timeouts)
+### Incident: Thread Pool Exhaustion (API Timeouts)
 
 ```java
 // Symptom: All API calls timing out, thread pool full
@@ -364,7 +370,7 @@ public ThreadPoolTaskExecutor emailTaskExecutor() {
 }
 ```
 
-## Incident: Race Condition — Overselling
+### Incident: Race Condition — Overselling
 
 ```java
 // Symptom: Inventory shows -5 units (sold more than in stock)
@@ -401,11 +407,11 @@ int decrementStock(@Param("id") Long id, @Param("qty") int qty);
 
 ---
 
-# 5. Spring Boot Runtime Issues
+## 5. Spring Boot Runtime Issues
 
-## Incident: @Transactional Not Working
+### Incident: @Transactional Not Working
 
-### Case 1: Checked Exception Not Rolling Back
+#### Case 1: Checked Exception Not Rolling Back
 
 ```java
 // BAD: Checked exceptions don't trigger rollback by default!
@@ -421,17 +427,17 @@ public void processOrder(Order order) throws PaymentException {
 public void processOrder(Order order) throws PaymentException { ... }
 ```
 
-### Case 2: Self-Invocation Bypass
+#### Case 2: Self-Invocation Bypass
 
 ```java
 // BAD: Calling @Transactional method from same class
 @Service
 public class OrderService {
-    
+
     public void placeOrder(Order order) {
         processPayment(order);  // DIRECT CALL — bypasses proxy → no transaction!
     }
-    
+
     @Transactional
     public void processPayment(Order order) {
         // This runs WITHOUT a transaction!
@@ -443,17 +449,17 @@ public class OrderService {
 public class OrderService {
     @Autowired
     private OrderService self;  // inject proxy
-    
+
     public void placeOrder(Order order) {
         self.processPayment(order);  // goes through proxy → transaction works
     }
-    
+
     @Transactional
     public void processPayment(Order order) { ... }
 }
 ```
 
-### Case 3: @Async + @Transactional
+#### Case 3: @Async + @Transactional
 
 ```java
 // BAD: @Async breaks transaction propagation
@@ -470,7 +476,7 @@ public void notifyAsync(Order order) {
 }
 ```
 
-## Incident: Bean Creation Failure (Circular Dependency)
+### Incident: Bean Creation Failure (Circular Dependency)
 
 ```
 The dependencies of some of the beans in the application context form a cycle:
@@ -498,39 +504,40 @@ public class OrderEventPublisher {  // extracted shared logic
 
 ---
 
-# 6. Kafka Consumer Issues
+## 6. Kafka Consumer Issues
 
-## Incident: Consumer Stuck on Poison Pill
+### Incident: Consumer Stuck on Poison Pill
 
-### Symptoms
+#### Symptoms
+
 - Consumer lag growing
 - Same error in logs repeatedly: `Failed to deserialize`
 - No progress on partition
 
-### Fix
+#### Fix
 
 ```java
 // Configure error handler with DLT
 @Bean
 public DefaultErrorHandler errorHandler(KafkaTemplate<String, Object> template) {
     DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(template);
-    DefaultErrorHandler handler = new DefaultErrorHandler(recoverer, 
+    DefaultErrorHandler handler = new DefaultErrorHandler(recoverer,
         new FixedBackOff(1000L, 2L)); // retry 2x, then DLT
     handler.addNotRetryableExceptions(DeserializationException.class);
     return handler;
 }
 ```
 
-## Incident: Consumer Lag Growing (Processing Too Slow)
+### Incident: Consumer Lag Growing (Processing Too Slow)
 
-### Diagnosis
+#### Diagnosis
 
 ```bash
 kafka-consumer-groups.sh --bootstrap-server kafka:9092 \
   --group order-processor --describe
 ```
 
-### Solutions
+#### Solutions
 
 ```java
 // Option 1: Increase concurrency (one thread per partition)
@@ -558,16 +565,16 @@ public void process(OrderEvent event, Acknowledgment ack) {
 
 ---
 
-# 7. Distributed System Issues
+## 7. Distributed System Issues
 
-## Incident: Cascading Failure
+### Incident: Cascading Failure
 
 ```
 Payment gateway slow → Order service threads exhausted → API gateway requests queue up
 → API gateway thread pool exhausted → all APIs down
 ```
 
-### Solution Applied
+#### Solution Applied
 
 ```java
 // 1. Timeout: don't wait indefinitely
@@ -595,7 +602,7 @@ public CompletableFuture<PaymentResult> paymentFallback(PaymentRequest req, Exce
 }
 ```
 
-## Incident: Duplicate Processing
+### Incident: Duplicate Processing
 
 ```
 Scenario: Kafka consumer processes an order event and saves to DB.
@@ -608,15 +615,15 @@ Restart → event reprocessed → duplicate order!
 @KafkaListener(topics = "order-events")
 @Transactional
 public void processOrderEvent(OrderEvent event, Acknowledgment ack) {
-    
+
     // Atomic upsert using unique constraint on event_id
     try {
         ProcessedEvent processed = new ProcessedEvent(event.getEventId());
         processedEventRepo.save(processed); // will throw if duplicate (UNIQUE constraint)
-        
+
         orderService.createOrder(event);
         ack.acknowledge();
-        
+
     } catch (DataIntegrityViolationException e) {
         // Duplicate event — already processed
         log.info("Duplicate event ignored: {}", event.getEventId());
@@ -627,9 +634,9 @@ public void processOrderEvent(OrderEvent event, Acknowledgment ack) {
 
 ---
 
-# 8. Performance Tuning Guide
+## 8. Performance Tuning Guide
 
-## JVM Tuning
+### JVM Tuning
 
 ```bash
 # Production JVM flags for Java 17+ Spring Boot
@@ -651,13 +658,13 @@ java \
   -XX:SoftMaxHeapSize=3g    # soft cap, GC kicks in before hard limit
 ```
 
-## Database Query Optimization Checklist
+### Database Query Optimization Checklist
 
 ```
 1. EXPLAIN ANALYZE every query before deploying
 2. Add indexes for:
    - WHERE clause columns
-   - JOIN columns  
+   - JOIN columns
    - ORDER BY columns (if used with LIMIT)
    - Composite: most selective column first
 3. Avoid:
@@ -674,7 +681,7 @@ java \
    - Use @Transactional(readOnly = true) for queries
 ```
 
-## API Latency Optimization
+### API Latency Optimization
 
 ```java
 // 1. Parallel service calls instead of sequential
@@ -683,9 +690,9 @@ ProductDetails product = productService.get(id);   // 200ms
 InventoryStatus stock = inventoryService.get(id);  // 300ms
 
 // GOOD: parallel (total = max(200ms, 300ms) = 300ms)
-CompletableFuture<ProductDetails> productFuture = 
+CompletableFuture<ProductDetails> productFuture =
     CompletableFuture.supplyAsync(() -> productService.get(id));
-CompletableFuture<InventoryStatus> stockFuture = 
+CompletableFuture<InventoryStatus> stockFuture =
     CompletableFuture.supplyAsync(() -> inventoryService.get(id));
 CompletableFuture.allOf(productFuture, stockFuture).join();
 
@@ -697,26 +704,29 @@ CompletableFuture.allOf(productFuture, stockFuture).join();
 
 ---
 
-# 9. Interview Questions
+## 9. Interview Questions
 
-### Debugging
+#### Debugging
+
 1. Walk me through how you'd debug a memory leak in production.
 2. How do you identify a slow database query?
 3. What is a thread dump and when do you use it?
 
-### Incidents
+#### Incidents
+
 4. How would you debug `HikariPool - Connection is not available`?
 5. You deployed and error rate went from 0.1% to 15%. What do you do?
 6. A Kafka consumer's lag is growing. Walk through your diagnosis.
 
-### Production Readiness
+#### Production Readiness
+
 7. What metrics would you instrument in a Java microservice?
 8. How do you ensure zero-downtime deployments with DB schema changes?
 9. How do you handle the "poison pill" problem in Kafka?
 
 ---
 
-## Summary — Production Support Cheatsheet
+### Summary — Production Support Cheatsheet
 
 ```
 First Response:

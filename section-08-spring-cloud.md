@@ -21,9 +21,9 @@ nav_order: 9
 
 ---
 
-# 1. Eureka — Service Discovery
+## 1. Eureka — Service Discovery
 
-## Setup: Eureka Server
+### Setup: Eureka Server
 
 ```xml
 <!-- pom.xml: Eureka Server -->
@@ -46,14 +46,14 @@ server:
 
 eureka:
   client:
-    register-with-eureka: false   # server doesn't register with itself
+    register-with-eureka: false # server doesn't register with itself
     fetch-registry: false
   server:
-    enable-self-preservation: false   # disable in dev (re-enable in prod!)
+    enable-self-preservation: false # disable in dev (re-enable in prod!)
     eviction-interval-timer-in-ms: 10000
 ```
 
-## Setup: Eureka Client (Microservice)
+### Setup: Eureka Client (Microservice)
 
 ```xml
 <dependency>
@@ -66,7 +66,7 @@ eureka:
 # application.yml — microservice
 spring:
   application:
-    name: order-service   # THIS is the service name registered in Eureka
+    name: order-service # THIS is the service name registered in Eureka
 
 eureka:
   client:
@@ -76,14 +76,14 @@ eureka:
   instance:
     prefer-ip-address: true
     instance-id: ${spring.application.name}:${server.port}
-    lease-renewal-interval-in-seconds: 10    # heartbeat interval
-    lease-expiration-duration-in-seconds: 30  # removed if no heartbeat
+    lease-renewal-interval-in-seconds: 10 # heartbeat interval
+    lease-expiration-duration-in-seconds: 30 # removed if no heartbeat
     metadata-map:
       version: "2.1.0"
       environment: "production"
 ```
 
-## Eureka Self-Preservation
+### Eureka Self-Preservation
 
 **Problem:** If Eureka server loses heartbeats from 85% of clients (e.g., network issue), it enters **self-preservation mode** and stops evicting instances — even unhealthy ones.
 
@@ -91,9 +91,9 @@ eureka:
 
 ---
 
-# 2. Spring Cloud Config Server
+## 2. Spring Cloud Config Server
 
-## What It Does
+### What It Does
 
 Centralized configuration management — all microservices pull their config from one place (Git repo, Vault, filesystem).
 
@@ -106,7 +106,7 @@ Git Repository (centralized config)
 └── payment-service-prod.yml
 ```
 
-## Config Server Setup
+### Config Server Setup
 
 ```xml
 <dependency>
@@ -133,23 +133,23 @@ spring:
         git:
           uri: https://github.com/mycompany/config-repo
           default-label: main
-          search-paths: "{application}"  # look in subdirectory named after service
+          search-paths: "{application}" # look in subdirectory named after service
           clone-on-start: true
           timeout: 10
-          
+
           # For private repos
           username: ${GIT_USER}
           password: ${GIT_TOKEN}
-          
+
           # Or with SSH key
           private-key: ${GIT_SSH_KEY}
 
 # Encrypt sensitive properties
 encrypt:
-  key: ${ENCRYPTION_KEY}  # symmetric key for {cipher} values
+  key: ${ENCRYPTION_KEY} # symmetric key for {cipher} values
 ```
 
-## Config Client Setup
+### Config Client Setup
 
 ```yaml
 # bootstrap.yml (loaded BEFORE application.yml)
@@ -170,7 +170,7 @@ spring:
     import: "optional:configserver:http://config-server:8888"
 ```
 
-## Encrypting Sensitive Config
+### Encrypting Sensitive Config
 
 ```bash
 # Encrypt a value via Config Server API
@@ -181,16 +181,16 @@ curl http://config-server:8888/encrypt -d "mySecretPassword"
 # spring.datasource.password: '{cipher}682bc583f4641835fa2db009355293665d2647dade3375c0ee201de2a49f7bda'
 ```
 
-## Dynamic Config Refresh
+### Dynamic Config Refresh
 
 ```java
 @RestController
 @RefreshScope  // reloads bean when /actuator/refresh called
 public class FeatureFlagController {
-    
+
     @Value("${feature.newCheckout.enabled:false}")
     private boolean newCheckoutEnabled;
-    
+
     @GetMapping("/features/checkout")
     public boolean isNewCheckoutEnabled() {
         return newCheckoutEnabled;
@@ -208,20 +208,20 @@ POST /actuator/refresh
 
 ---
 
-# 3. Spring Cloud Gateway
+## 3. Spring Cloud Gateway
 
-## Advanced Configuration
+### Advanced Configuration
 
 ```java
 @Configuration
 public class GatewayRoutingConfig {
-    
+
     @Bean
     public RouteLocator gatewayRoutes(RouteLocatorBuilder builder,
                                       JwtAuthFilter jwtFilter,
                                       RequestLoggingFilter loggingFilter) {
         return builder.routes()
-            
+
             // Order Service route with full configuration
             .route("order-service", r -> r
                 .path("/api/v1/orders/**")
@@ -247,7 +247,7 @@ public class GatewayRoutingConfig {
                         .setKeyResolver(userKeyResolver()))
                 )
                 .uri("lb://order-service"))
-            
+
             // Public endpoint — no auth
             .route("product-catalog-public", r -> r
                 .path("/api/v1/products/**")
@@ -257,16 +257,16 @@ public class GatewayRoutingConfig {
                     .cache(Duration.ofMinutes(5))  // cache GET responses
                 )
                 .uri("lb://product-service"))
-            
+
             .build();
     }
-    
+
     // Rate limiter: 100 requests/second per user
     @Bean
     public RedisRateLimiter redisRateLimiter() {
         return new RedisRateLimiter(100, 200, 1);  // replenishRate, burstCapacity, requestedTokens
     }
-    
+
     // Rate limit key: extract user ID from JWT
     @Bean
     public KeyResolver userKeyResolver() {
@@ -278,24 +278,24 @@ public class GatewayRoutingConfig {
 }
 ```
 
-## Custom Global Filter
+### Custom Global Filter
 
 ```java
 @Component
 public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
-    
+
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingGlobalFilter.class);
-    
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         long startTime = System.currentTimeMillis();
         String requestId = UUID.randomUUID().toString();
-        
+
         // Mutate request: add correlation ID
         ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
             .header("X-Correlation-ID", requestId)
             .build();
-        
+
         return chain.filter(exchange.mutate().request(mutatedRequest).build())
             .doOnSuccess(v -> {
                 long duration = System.currentTimeMillis() - startTime;
@@ -308,7 +308,7 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
             })
             .doOnError(e -> log.error("[{}] Request failed: {}", requestId, e.getMessage()));
     }
-    
+
     @Override
     public int getOrder() { return -1; } // run before other filters
 }
@@ -316,13 +316,13 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
 
 ---
 
-# 4. OpenFeign — Declarative HTTP Client
+## 4. OpenFeign — Declarative HTTP Client
 
-## Definition
+### Definition
 
 **OpenFeign** lets you write HTTP client code as Java interfaces with annotations — no `RestTemplate` or `WebClient` boilerplate.
 
-## Setup
+### Setup
 
 ```xml
 <dependency>
@@ -337,7 +337,7 @@ public class RequestLoggingGlobalFilter implements GlobalFilter, Ordered {
 public class OrderServiceApplication { }
 ```
 
-## Feign Client Interface
+### Feign Client Interface
 
 ```java
 @FeignClient(
@@ -347,27 +347,27 @@ public class OrderServiceApplication { }
     fallback = InventoryClientFallback.class
 )
 public interface InventoryClient {
-    
+
     @GetMapping("/api/inventory/{productId}")
     InventoryStatus checkStock(@PathVariable("productId") String productId);
-    
+
     @PostMapping("/api/inventory/reserve")
     ReservationResult reserve(@RequestBody ReservationRequest request);
-    
+
     @DeleteMapping("/api/inventory/reserve/{reservationId}")
     void cancelReservation(@PathVariable String reservationId);
-    
+
     @GetMapping("/api/inventory/bulk")
     List<InventoryStatus> checkBulkStock(@RequestParam("ids") List<String> productIds);
 }
 ```
 
-## Feign Configuration
+### Feign Configuration
 
 ```java
 @Configuration
 public class InventoryClientConfig {
-    
+
     // Custom request interceptor (add auth header to all requests)
     @Bean
     public RequestInterceptor authInterceptor() {
@@ -379,7 +379,7 @@ public class InventoryClientConfig {
             template.header("X-Service-Name", "order-service");
         };
     }
-    
+
     // Custom error decoder
     @Bean
     public ErrorDecoder errorDecoder() {
@@ -401,19 +401,19 @@ public class InventoryClientConfig {
             return FeignException.errorStatus(methodKey, response);
         };
     }
-    
+
     // Custom encoder/decoder
     @Bean
     public Encoder feignEncoder(ObjectMapper objectMapper) {
         return new JacksonEncoder(objectMapper);
     }
-    
+
     // Logging
     @Bean
     public Logger.Level feignLoggerLevel() {
         return Logger.Level.FULL; // NONE, BASIC, HEADERS, FULL
     }
-    
+
     // Timeout
     @Bean
     public Request.Options requestOptions() {
@@ -426,7 +426,7 @@ public class InventoryClientConfig {
 }
 ```
 
-## Feign + Resilience4j
+### Feign + Resilience4j
 
 ```java
 @FeignClient(
@@ -440,7 +440,7 @@ public interface PaymentClient {
 
 @Component
 public class PaymentClientFallbackFactory implements FallbackFactory<PaymentClient> {
-    
+
     @Override
     public PaymentClient create(Throwable cause) {
         log.warn("Payment service fallback triggered: {}", cause.getMessage());
@@ -457,29 +457,28 @@ public class PaymentClientFallbackFactory implements FallbackFactory<PaymentClie
 }
 ```
 
-## OpenFeign vs RestTemplate vs WebClient
+### OpenFeign vs RestTemplate vs WebClient
 
-| | RestTemplate | WebClient | OpenFeign |
-|--|-------------|-----------|-----------|
-| API Style | Imperative, verbose | Reactive, fluent | Declarative interface |
-| Blocking | Yes | Non-blocking | Yes |
-| Load Balancing | Manual | Manual | Auto (via Eureka) |
-| Circuit Breaking | Manual | Manual | Auto (Resilience4j) |
-| Retry | Manual | Manual | Auto |
-| Code Volume | High | Medium | Minimal |
-| Spring Boot 3 | Deprecated | Recommended | Recommended |
-| Best For | Legacy | High concurrency | Service-to-service |
+|                  | RestTemplate        | WebClient        | OpenFeign             |
+| ---------------- | ------------------- | ---------------- | --------------------- |
+| API Style        | Imperative, verbose | Reactive, fluent | Declarative interface |
+| Blocking         | Yes                 | Non-blocking     | Yes                   |
+| Load Balancing   | Manual              | Manual           | Auto (via Eureka)     |
+| Circuit Breaking | Manual              | Manual           | Auto (Resilience4j)   |
+| Retry            | Manual              | Manual           | Auto                  |
+| Code Volume      | High                | Medium           | Minimal               |
+| Spring Boot 3    | Deprecated          | Recommended      | Recommended           |
+| Best For         | Legacy              | High concurrency | Service-to-service    |
 
 ---
 
-# 5. Resilience4j — Fault Tolerance
+## 5. Resilience4j — Fault Tolerance
 
-## Complete Configuration
+### Complete Configuration
 
 ```yaml
 # application.yml
 resilience4j:
-  
   circuitbreaker:
     instances:
       paymentGateway:
@@ -496,7 +495,7 @@ resilience4j:
           - feign.FeignException.ServiceUnavailable
         ignore-exceptions:
           - com.example.exception.BusinessException
-  
+
   retry:
     instances:
       inventoryService:
@@ -508,20 +507,20 @@ resilience4j:
           - com.example.exception.NotFoundException
         exponential-backoff-multiplier: 2
         enable-exponential-backoff: true
-  
+
   ratelimiter:
     instances:
       smsService:
-        limit-for-period: 100          # max 100 calls per refresh period
-        limit-refresh-period: 1s       # reset every second
-        timeout-duration: 0s           # fail immediately if rate exceeded
-  
+        limit-for-period: 100 # max 100 calls per refresh period
+        limit-refresh-period: 1s # reset every second
+        timeout-duration: 0s # fail immediately if rate exceeded
+
   bulkhead:
     instances:
       paymentGateway:
-        max-concurrent-calls: 10        # max 10 concurrent calls
-        max-wait-duration: 100ms        # wait up to 100ms for permit
-  
+        max-concurrent-calls: 10 # max 10 concurrent calls
+        max-wait-duration: 100ms # wait up to 100ms for permit
+
   timelimiter:
     instances:
       paymentGateway:
@@ -546,18 +545,18 @@ public CompletableFuture<PaymentResult> paymentFallback(ChargeRequest request, E
 
 ---
 
-# 6. Distributed Tracing
+## 6. Distributed Tracing
 
-## Problem
+### Problem
 
 ```
 User request spans 5 services:
   API Gateway → Order Service → Inventory Service → Payment Service → Notification Service
-  
+
 Which service is causing the 2-second latency? Without tracing, impossible to tell.
 ```
 
-## Solution: Micrometer Tracing (Spring Boot 3) / Sleuth (Spring Boot 2)
+### Solution: Micrometer Tracing (Spring Boot 3) / Sleuth (Spring Boot 2)
 
 ```xml
 <dependency>
@@ -574,24 +573,24 @@ Which service is causing the 2-second latency? Without tracing, impossible to te
 management:
   tracing:
     sampling:
-      probability: 0.1   # trace 10% of requests (100% in dev)
+      probability: 0.1 # trace 10% of requests (100% in dev)
   zipkin:
     tracing:
       endpoint: http://zipkin:9411/api/v2/spans
 ```
 
-## How Tracing Works
+### How Tracing Works
 
 ```
 Request → API Gateway
   TraceId: abc-123  SpanId: span-1
-  
+
   → Order Service (same TraceId, new SpanId)
   TraceId: abc-123  SpanId: span-2  ParentSpanId: span-1
-  
+
     → Inventory Service
     TraceId: abc-123  SpanId: span-3  ParentSpanId: span-2
-    
+
     → Payment Service
     TraceId: abc-123  SpanId: span-4  ParentSpanId: span-2
 
@@ -604,19 +603,19 @@ Zipkin UI shows: API Gateway(50ms) → Order(800ms) → Inventory(100ms) + Payme
 // Custom span for business operations
 @Service
 public class OrderService {
-    
+
     @Autowired
     private Tracer tracer;
-    
+
     public Order placeOrder(OrderRequest request) {
         Span span = tracer.nextSpan().name("place-order").start();
-        
+
         try (Tracer.SpanInScope ws = tracer.withSpan(span)) {
             span.tag("order.user_id", request.getUserId());
             span.tag("order.amount", request.getTotalAmount().toString());
-            
+
             Order order = processOrder(request);
-            
+
             span.tag("order.id", order.getId().toString());
             return order;
         } catch (Exception e) {
@@ -631,20 +630,21 @@ public class OrderService {
 
 ---
 
-## Production Scenarios
+### Production Scenarios
 
-### Scenario: Config Server Down on Startup
+#### Scenario: Config Server Down on Startup
 
 **Problem:** All microservices fail to start because Config Server is unavailable.
 
 **Root Cause:** Default behavior is to fail fast when Config Server unreachable.
 
 **Solution:**
+
 ```yaml
 spring:
   cloud:
     config:
-      fail-fast: false   # don't crash if config server down
+      fail-fast: false # don't crash if config server down
       retry:
         max-attempts: 6
         initial-interval: 2000
@@ -655,19 +655,22 @@ spring:
 
 ---
 
-## Interview Questions
+### Interview Questions
 
-### Basic
+#### Basic
+
 1. What is Eureka and what problem does it solve?
 2. What is the difference between Eureka server and Eureka client?
 3. What is OpenFeign and how is it different from RestTemplate?
 
-### Intermediate
+#### Intermediate
+
 4. How does Spring Cloud Config Server handle encrypted properties?
 5. How would you implement circuit breaking in OpenFeign?
 6. What is Spring Cloud Gateway and how does it differ from Zuul?
 
-### Advanced
+#### Advanced
+
 7. How does distributed tracing work? What is TraceId vs SpanId?
 8. How would you implement a custom Feign error decoder to handle retryable vs non-retryable errors?
 9. How do you implement dynamic config refresh without restarting services?
@@ -675,14 +678,14 @@ spring:
 
 ---
 
-## Summary — Spring Cloud Cheatsheet
+### Summary — Spring Cloud Cheatsheet
 
 ```
 Eureka: Service Registry
   Server: @EnableEurekaServer, port 8761
   Client: spring.application.name + eureka.client.service-url
   Heartbeat: 30s, expiry: 90s
-  
+
 Config Server: Centralized config from Git/Vault
   Client: bootstrap.yml + spring.config.import
   Refresh: @RefreshScope + /actuator/refresh or busrefresh
@@ -692,12 +695,12 @@ Gateway (Spring Cloud Gateway):
   Routes: path, method, header predicates
   Filters: auth, rate limit, circuit breaker, retry, rewrite
   Rate Limiting: Redis token bucket
-  
+
 OpenFeign:
   @FeignClient(name="service-name") + @EnableFeignClients
   Config: RequestInterceptor (auth), ErrorDecoder, Options (timeout)
   Resilience: FallbackFactory + Resilience4j annotations
-  
+
 Resilience4j:
   @CircuitBreaker → fail fast on error threshold
   @Retry → exponential backoff with jitter

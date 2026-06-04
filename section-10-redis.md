@@ -24,9 +24,9 @@ nav_order: 11
 
 ---
 
-# 1. Redis Data Structures
+## 1. Redis Data Structures
 
-## String
+### String
 
 Most versatile. Store JSON, numbers, binary data.
 
@@ -46,7 +46,7 @@ SET session:abc123 "{...}" PX 5000  # expires in 5000 milliseconds
 SET lock:order:1001 "process-1" NX EX 30  # NX=only set if not exists
 ```
 
-## List
+### List
 
 Ordered, allows duplicates. Push/pop from either end.
 
@@ -62,7 +62,7 @@ LLEN queue:emails                     # length
 BRPOP queue:emails 30
 ```
 
-## Set
+### Set
 
 Unordered, unique elements. Fast membership tests.
 
@@ -79,7 +79,7 @@ SINTER user:1001:interests user:1002:interests   # intersection (common interest
 SDIFF user:1001:interests user:1002:interests    # difference
 ```
 
-## Sorted Set (ZSet)
+### Sorted Set (ZSet)
 
 Each element has a **score** (float). Elements ordered by score. Best for leaderboards, ranges.
 
@@ -100,7 +100,7 @@ ZRANGEBYSCORE leaderboard 1000 2000
 # Use for sliding window rate limiting!
 ```
 
-## Hash
+### Hash
 
 Map of field-value pairs. Like a row in a database.
 
@@ -116,7 +116,7 @@ HINCRBY product:5001 stock -1   # atomic stock decrement
 # Hash: HINCRBY product:5001 stock -1 (atomic, no read-modify-write)
 ```
 
-## Stream
+### Stream
 
 Append-only log. Similar to Kafka topic but within Redis.
 
@@ -135,9 +135,9 @@ XACK orders inventory-service <message-id>   # acknowledge processing
 
 ---
 
-# 2. Spring Boot Redis Integration
+## 2. Spring Boot Redis Integration
 
-## Setup
+### Setup
 
 ```xml
 <dependency>
@@ -155,7 +155,7 @@ spring:
       password: ${REDIS_PASSWORD}
       lettuce:
         pool:
-          max-active: 20    # max connections in pool
+          max-active: 20 # max connections in pool
           max-idle: 10
           min-idle: 5
           max-wait: 1000ms
@@ -164,12 +164,12 @@ spring:
         #   nodes: redis1:6379,redis2:6379,redis3:6379
 ```
 
-## RedisTemplate
+### RedisTemplate
 
 ```java
 @Configuration
 public class RedisConfig {
-    
+
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
@@ -184,39 +184,39 @@ public class RedisConfig {
 
 @Service
 public class ProductCacheService {
-    
+
     @Autowired
     private RedisTemplate<String, Object> redisTemplate;
-    
+
     private static final String PRODUCT_KEY_PREFIX = "product:";
     private static final Duration CACHE_TTL = Duration.ofHours(1);
-    
+
     public void cacheProduct(Product product) {
         String key = PRODUCT_KEY_PREFIX + product.getId();
         redisTemplate.opsForValue().set(key, product, CACHE_TTL);
     }
-    
+
     public Optional<Product> getCachedProduct(Long productId) {
         String key = PRODUCT_KEY_PREFIX + productId;
         Product product = (Product) redisTemplate.opsForValue().get(key);
         return Optional.ofNullable(product);
     }
-    
+
     public void evictProduct(Long productId) {
         redisTemplate.delete(PRODUCT_KEY_PREFIX + productId);
     }
-    
+
     // Hash operations
     public void updateProductStock(Long productId, int quantity) {
         String key = PRODUCT_KEY_PREFIX + productId;
         redisTemplate.opsForHash().increment(key, "stock", quantity);
     }
-    
+
     // Sorted set (leaderboard)
     public void updateScore(String userId, double score) {
         redisTemplate.opsForZSet().add("leaderboard", userId, score);
     }
-    
+
     public Set<ZSetOperations.TypedTuple<Object>> getTopPlayers(int count) {
         return redisTemplate.opsForZSet()
             .reverseRangeWithScores("leaderboard", 0, count - 1);
@@ -224,13 +224,13 @@ public class ProductCacheService {
 }
 ```
 
-## Spring Cache Annotations (Cache Abstraction)
+### Spring Cache Annotations (Cache Abstraction)
 
 ```java
 @Configuration
 @EnableCaching
 public class CacheConfig {
-    
+
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
         // Default TTL configuration
@@ -241,14 +241,14 @@ public class CacheConfig {
                 .fromSerializer(new StringRedisSerializer()))
             .serializeValuesWith(RedisSerializationContext.SerializationPair
                 .fromSerializer(new GenericJackson2JsonRedisSerializer()));
-        
+
         // Per-cache TTL overrides
         Map<String, RedisCacheConfiguration> cacheConfigs = Map.of(
             "products", defaultConfig.entryTtl(Duration.ofHours(1)),
             "sessions", defaultConfig.entryTtl(Duration.ofMinutes(30)),
             "rates", defaultConfig.entryTtl(Duration.ofSeconds(60))
         );
-        
+
         return RedisCacheManager.builder(factory)
             .cacheDefaults(defaultConfig)
             .withInitialCacheConfigurations(cacheConfigs)
@@ -258,7 +258,7 @@ public class CacheConfig {
 
 @Service
 public class ProductService {
-    
+
     @Cacheable(value = "products", key = "#productId",
                condition = "#productId > 0",
                unless = "#result == null")
@@ -266,19 +266,19 @@ public class ProductService {
         // Only called if not in cache
         return productRepository.findById(productId).orElseThrow();
     }
-    
+
     @CachePut(value = "products", key = "#product.id")
     public Product update(Product product) {
         // Always executes AND updates cache
         return productRepository.save(product);
     }
-    
+
     @CacheEvict(value = "products", key = "#productId")
     public void delete(Long productId) {
         // Removes from cache after deleting
         productRepository.deleteById(productId);
     }
-    
+
     @CacheEvict(value = "products", allEntries = true)
     public void clearAllProducts() {
         // Clears entire "products" cache (use sparingly!)
@@ -288,9 +288,9 @@ public class ProductService {
 
 ---
 
-# 3. Caching Strategies
+## 3. Caching Strategies
 
-## Cache-Aside (Lazy Loading) — Most Common
+### Cache-Aside (Lazy Loading) — Most Common
 
 ```
 Application reads:
@@ -299,7 +299,7 @@ Application reads:
 3. Populate cache
 4. Return data
 
-Cache is populated on demand. 
+Cache is populated on demand.
 Cold start: first request hits DB (cache miss).
 ```
 
@@ -315,7 +315,7 @@ public Product getProduct(Long id) {
 }
 ```
 
-## Write-Through
+### Write-Through
 
 ```
 Application writes:
@@ -327,7 +327,7 @@ Write penalty: every write hits both cache and DB.
 Use when: reads are much more frequent than writes, data must be fresh.
 ```
 
-## Write-Behind (Write-Back)
+### Write-Behind (Write-Back)
 
 ```
 Application writes:
@@ -338,7 +338,7 @@ Better write throughput. Risk: data loss if cache fails before DB write.
 Use when: extremely high write rate, DB is the bottleneck.
 ```
 
-## Read-Through
+### Read-Through
 
 ```
 Cache manages DB reads:
@@ -353,20 +353,20 @@ Requires cache that supports read-through (e.g., Hazelcast).
 
 ---
 
-# 4. Eviction Policies
+## 4. Eviction Policies
 
 When Redis reaches `maxmemory`, it must evict keys. Configure via `maxmemory-policy`.
 
-| Policy | What Gets Evicted | Use When |
-|--------|-------------------|----------|
-| `noeviction` | Error returned (no eviction) | Critical data, no eviction OK |
-| `allkeys-lru` | Least Recently Used from all keys | General-purpose cache |
-| `volatile-lru` | LRU from keys with TTL set | Mix of cache + persistent data |
-| `allkeys-lfu` | Least Frequently Used from all keys | Skewed access patterns |
-| `volatile-lfu` | LFU from keys with TTL | Skewed access + persistent data |
-| `allkeys-random` | Random from all keys | Uniform access distribution |
-| `volatile-random` | Random from keys with TTL | |
-| `volatile-ttl` | Keys with shortest TTL remaining | |
+| Policy            | What Gets Evicted                   | Use When                        |
+| ----------------- | ----------------------------------- | ------------------------------- |
+| `noeviction`      | Error returned (no eviction)        | Critical data, no eviction OK   |
+| `allkeys-lru`     | Least Recently Used from all keys   | General-purpose cache           |
+| `volatile-lru`    | LRU from keys with TTL set          | Mix of cache + persistent data  |
+| `allkeys-lfu`     | Least Frequently Used from all keys | Skewed access patterns          |
+| `volatile-lfu`    | LFU from keys with TTL              | Skewed access + persistent data |
+| `allkeys-random`  | Random from all keys                | Uniform access distribution     |
+| `volatile-random` | Random from keys with TTL           |                                 |
+| `volatile-ttl`    | Keys with shortest TTL remaining    |                                 |
 
 **Recommended for most caches:** `allkeys-lru`
 
@@ -375,7 +375,7 @@ spring:
   data:
     redis:
       host: redis
-      
+
 # redis.conf
 maxmemory 2gb
 maxmemory-policy allkeys-lru
@@ -383,9 +383,9 @@ maxmemory-policy allkeys-lru
 
 ---
 
-# 5. Distributed Locking
+## 5. Distributed Locking
 
-## Why Needed
+### Why Needed
 
 ```
 Without distributed lock:
@@ -397,24 +397,24 @@ With distributed lock:
   Thread 2 (Pod B): ACQUIRE LOCK → [waits] → Gets lock → Check stock → 0 units → Return error
 ```
 
-## SET NX (Simple Lock)
+### SET NX (Simple Lock)
 
 ```java
 @Service
 public class SimpleRedisLock {
-    
+
     @Autowired
     private StringRedisTemplate redisTemplate;
-    
+
     private static final Duration LOCK_TIMEOUT = Duration.ofSeconds(30);
-    
+
     public boolean tryLock(String lockKey, String lockValue) {
         // SET key value NX EX 30  (atomic: set only if not exists, expire in 30s)
         Boolean acquired = redisTemplate.opsForValue()
             .setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT);
         return Boolean.TRUE.equals(acquired);
     }
-    
+
     public void unlock(String lockKey, String lockValue) {
         // MUST check value before deleting — only owner can release!
         // Use Lua script for atomicity
@@ -431,14 +431,14 @@ public class SimpleRedisLock {
             lockValue
         );
     }
-    
+
     public <T> T withLock(String lockKey, Duration timeout, Supplier<T> operation) {
         String lockValue = UUID.randomUUID().toString();
-        
+
         if (!tryLock(lockKey, lockValue)) {
             throw new LockAcquisitionException("Could not acquire lock: " + lockKey);
         }
-        
+
         try {
             return operation.get();
         } finally {
@@ -461,7 +461,7 @@ public OrderResult placeOrder(String productId, int quantity) {
 }
 ```
 
-## Redisson (Production Distributed Lock)
+### Redisson (Production Distributed Lock)
 
 ```xml
 <dependency>
@@ -474,20 +474,20 @@ public OrderResult placeOrder(String productId, int quantity) {
 ```java
 @Service
 public class RedissonLockService {
-    
+
     @Autowired
     private RedissonClient redissonClient;
-    
+
     public void processCriticalSection(String resourceId) throws InterruptedException {
         RLock lock = redissonClient.getLock("lock:" + resourceId);
-        
+
         // Try lock with timeout: wait 5s, auto-release after 30s
         boolean acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
-        
+
         if (!acquired) {
             throw new LockAcquisitionException("Resource locked: " + resourceId);
         }
-        
+
         try {
             // Critical section
             processResource(resourceId);
@@ -495,22 +495,22 @@ public class RedissonLockService {
             lock.unlock();
         }
     }
-    
+
     // Fair lock: respects order of acquisition requests
     public void fairLockExample(String resourceId) {
         RLock fairLock = redissonClient.getFairLock("fairlock:" + resourceId);
         // ...
     }
-    
+
     // Read-Write lock: multiple readers, one writer
     public void readWriteLockExample(String resourceId) {
         RReadWriteLock rwLock = redissonClient.getReadWriteLock("rwlock:" + resourceId);
-        
+
         // Multiple readers can hold simultaneously
         rwLock.readLock().lock();
         try { readResource(resourceId); }
         finally { rwLock.readLock().unlock(); }
-        
+
         // Only one writer, blocks readers
         rwLock.writeLock().lock();
         try { updateResource(resourceId); }
@@ -521,37 +521,37 @@ public class RedissonLockService {
 
 ---
 
-# 6. Rate Limiting
+## 6. Rate Limiting
 
-## Token Bucket with Redis
+### Token Bucket with Redis
 
 ```java
 @Service
 public class RateLimiter {
-    
+
     @Autowired
     private StringRedisTemplate redisTemplate;
-    
+
     // Sliding window rate limiter using sorted set
     // Key: rate_limit:{userId}  Value: sorted set of timestamps
     public boolean isAllowed(String userId, int maxRequests, Duration window) {
         String key = "rate_limit:" + userId;
         long now = System.currentTimeMillis();
         long windowStart = now - window.toMillis();
-        
+
         String luaScript = """
             local key = KEYS[1]
             local now = tonumber(ARGV[1])
             local window_start = tonumber(ARGV[2])
             local max_requests = tonumber(ARGV[3])
             local ttl = tonumber(ARGV[4])
-            
+
             -- Remove expired entries (older than window)
             redis.call('zremrangebyscore', key, '-inf', window_start)
-            
+
             -- Count current requests in window
             local current = redis.call('zcard', key)
-            
+
             if current < max_requests then
                 -- Add current request with timestamp as score
                 redis.call('zadd', key, now, now .. '-' .. math.random())
@@ -561,7 +561,7 @@ public class RateLimiter {
                 return 0  -- denied
             end
             """;
-        
+
         Long result = redisTemplate.execute(
             new DefaultRedisScript<>(luaScript, Long.class),
             List.of(key),
@@ -570,7 +570,7 @@ public class RateLimiter {
             String.valueOf(maxRequests),
             String.valueOf(window.getSeconds() + 1)
         );
-        
+
         return Long.valueOf(1).equals(result);
     }
 }
@@ -578,17 +578,17 @@ public class RateLimiter {
 // Spring API rate limiting
 @Component
 public class RateLimitInterceptor implements HandlerInterceptor {
-    
+
     @Autowired
     private RateLimiter rateLimiter;
-    
+
     @Override
     public boolean preHandle(HttpServletRequest request,
                               HttpServletResponse response,
                               Object handler) {
-        
+
         String userId = (String) request.getAttribute("userId");
-        
+
         if (!rateLimiter.isAllowed(userId, 100, Duration.ofMinutes(1))) {
             response.setStatus(429); // Too Many Requests
             response.setHeader("X-RateLimit-Limit", "100");
@@ -602,9 +602,9 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
 ---
 
-# 7. Production Problems & Solutions
+## 7. Production Problems & Solutions
 
-## Problem 1: Cache Stampede (Thundering Herd)
+### Problem 1: Cache Stampede (Thundering Herd)
 
 **Scenario:** Popular product's cache entry expires at 3am. Thousands of simultaneous requests all hit DB at once.
 
@@ -617,15 +617,16 @@ Cache key "product:1001" expired 1ms ago
 ```
 
 **Solution 1: Probabilistic Early Expiration**
+
 ```java
 // Don't wait for TTL to expire — proactively refresh before expiry
 public Product getProduct(Long id) {
     ProductWithMeta cached = cache.get("product:" + id);
-    
+
     if (cached != null) {
         long remainingTtl = cached.getRemainingTtlMs();
         long totalTtl = 3600_000L; // 1 hour in ms
-        
+
         // 10% chance of proactive refresh when 10% TTL remains
         double probability = Math.exp(-0.01 * remainingTtl / totalTtl * Math.log(10));
         if (remainingTtl > 60_000 || Math.random() > probability) {
@@ -633,7 +634,7 @@ public Product getProduct(Long id) {
         }
         // Fall through to refresh
     }
-    
+
     // Refresh cache
     Product fresh = productRepository.findById(id).orElseThrow();
     cache.set("product:" + id, fresh, Duration.ofHours(1));
@@ -642,20 +643,21 @@ public Product getProduct(Long id) {
 ```
 
 **Solution 2: Mutex (Distributed Lock on Cache Miss)**
+
 ```java
 public Product getProduct(Long id) {
     Product cached = cache.get("product:" + id);
     if (cached != null) return cached;
-    
+
     String lockKey = "cache_lock:product:" + id;
-    
+
     // Only ONE thread refreshes the cache, others wait
     if (redisLock.tryLock(lockKey, UUID.randomUUID().toString())) {
         try {
             // Double-check after acquiring lock (another thread might have populated)
             cached = cache.get("product:" + id);
             if (cached != null) return cached;
-            
+
             Product fresh = productRepository.findById(id).orElseThrow();
             cache.set("product:" + id, fresh, Duration.ofHours(1));
             return fresh;
@@ -670,52 +672,54 @@ public Product getProduct(Long id) {
 }
 ```
 
-## Problem 2: Cache Penetration
+### Problem 2: Cache Penetration
 
 **Scenario:** Attacker sends requests for IDs that don't exist (e.g., /products/-1, /products/99999999). Each request misses cache, hits DB, returns null. DB overwhelmed.
 
 **Solution 1: Cache Null Values**
+
 ```java
 public Product getProduct(Long id) {
     String cacheKey = "product:" + id;
-    
+
     Object cached = cache.get(cacheKey);
     if (cached != null) {
         return cached == NULL_SENTINEL ? null : (Product) cached;
     }
-    
+
     Product product = productRepository.findById(id).orElse(null);
-    
+
     if (product == null) {
         // Cache "not found" for 5 minutes (short TTL)
         cache.set(cacheKey, NULL_SENTINEL, Duration.ofMinutes(5));
         return null;
     }
-    
+
     cache.set(cacheKey, product, Duration.ofHours(1));
     return product;
 }
 ```
 
 **Solution 2: Bloom Filter**
+
 ```java
 @Service
 public class ProductCacheService {
-    
+
     // Bloom filter: fast probabilistic data structure
     // "Is product ID 12345 in our database?" → NO (definite) or MAYBE (check DB)
     private final RBloomFilter<Long> productExistenceFilter;
-    
+
     public ProductCacheService(RedissonClient redisson) {
         this.productExistenceFilter = redisson.getBloomFilter("product-existence");
         productExistenceFilter.tryInit(10_000_000L, 0.03); // 10M items, 3% false positive
     }
-    
+
     // Call on startup / when new products added
     public void addProductToBloomFilter(Long productId) {
         productExistenceFilter.add(productId);
     }
-    
+
     public Product getProduct(Long id) {
         // Bloom filter: definite NO → skip DB entirely
         if (!productExistenceFilter.contains(id)) {
@@ -727,11 +731,12 @@ public class ProductCacheService {
 }
 ```
 
-## Problem 3: Cache Avalanche
+### Problem 3: Cache Avalanche
 
 **Scenario:** All cache keys set with same TTL expire simultaneously. Massive DB load spike.
 
 **Solution: TTL Jitter**
+
 ```java
 // Bad: all products expire at the same time
 cache.set("product:" + id, product, Duration.ofHours(1));
@@ -746,14 +751,15 @@ cache.set("product:" + id, product, ttl);
 
 ---
 
-# 8. Redis Deployment Topologies
+## 8. Redis Deployment Topologies
 
-## Standalone
+### Standalone
+
 ```
 Single Redis instance. No HA. For development only.
 ```
 
-## Redis Sentinel (High Availability)
+### Redis Sentinel (High Availability)
 
 ```
 ┌─────────────┐  ┌─────────────────┐  ┌─────────────┐
@@ -768,7 +774,7 @@ Single Redis instance. No HA. For development only.
     │  Master Redis  │─────→──→│  Replica Redis  │
     │ (read + write) │ replicate│  (read only)   │
     └────────────────┘         └────────────────┘
-    
+
 If master dies → Sentinels vote → promote replica to master
 ```
 
@@ -781,7 +787,7 @@ spring:
         nodes: sentinel1:26379,sentinel2:26379,sentinel3:26379
 ```
 
-## Redis Cluster (Horizontal Scaling)
+### Redis Cluster (Horizontal Scaling)
 
 ```
 16384 hash slots distributed across N master nodes.
@@ -802,47 +808,53 @@ spring:
         max-redirects: 3
 ```
 
-| | Standalone | Sentinel | Cluster |
-|--|-----------|---------|---------|
-| HA | No | Yes (failover ~30s) | Yes |
-| Horizontal Scale | No | No (single master writes) | Yes |
-| Multi-key operations | Yes | Yes | Limited (same slot) |
-| Complexity | Simple | Medium | Complex |
-| Use For | Dev/Test | Production, < 1TB data | Production, huge data |
+|                      | Standalone | Sentinel                  | Cluster               |
+| -------------------- | ---------- | ------------------------- | --------------------- |
+| HA                   | No         | Yes (failover ~30s)       | Yes                   |
+| Horizontal Scale     | No         | No (single master writes) | Yes                   |
+| Multi-key operations | Yes        | Yes                       | Limited (same slot)   |
+| Complexity           | Simple     | Medium                    | Complex               |
+| Use For              | Dev/Test   | Production, < 1TB data    | Production, huge data |
 
 ---
 
-# 9. Interview Questions
+## 9. Interview Questions
 
-### Basic
+#### Basic
+
 1. What is Redis and why use it instead of an application-level cache?
 2. What are the main Redis data structures? When would you use each?
 3. What is cache eviction and what are the policies?
 
-### Intermediate
+#### Intermediate
+
 4. Explain the Cache-Aside pattern. What are its advantages and risks?
 5. How does a distributed lock work in Redis?
 6. What is Cache Stampede and how would you prevent it?
 
-### Advanced
+#### Advanced
+
 7. Explain the Redlock algorithm for distributed locking across multiple Redis nodes.
 8. How would you implement rate limiting using Redis Sorted Sets?
 9. When would you use Redis Sentinel vs Redis Cluster?
 10. How does Redis handle data persistence (RDB vs AOF)?
 
-### Scenario-Based
-11. *Your application caches product data. A product's price is updated. How do you ensure cache consistency?*
+#### Scenario-Based
+
+11. _Your application caches product data. A product's price is updated. How do you ensure cache consistency?_
+
     - `@CacheEvict` on update, or `@CachePut` with new value
 
-12. *You're getting hammered by requests for non-existent user IDs. How do you fix it without crashing the DB?*
+12. _You're getting hammered by requests for non-existent user IDs. How do you fix it without crashing the DB?_
+
     - Bloom filter to reject definitely-absent IDs + cache null values with short TTL
 
-13. *Two instances of your payment service might simultaneously try to process the same payment. How do you prevent this?*
+13. _Two instances of your payment service might simultaneously try to process the same payment. How do you prevent this?_
     - Distributed lock on payment ID before processing + idempotency key check
 
 ---
 
-## Summary — Redis Cheatsheet
+### Summary — Redis Cheatsheet
 
 ```
 Data Structures:
@@ -857,7 +869,7 @@ Caching Strategies:
   Cache-Aside: lazy loading, most common, app manages cache
   Write-Through: write to cache + DB synchronously
   Write-Behind: write to cache, async write to DB
-  
+
 Cache Problems & Fixes:
   Stampede: mutex lock on miss + probabilistic early expiration
   Penetration: bloom filter + cache null values
@@ -867,7 +879,7 @@ Eviction Policies:
   allkeys-lru: general-purpose cache (recommended)
   volatile-lru: when you mix cache and persistent keys
   allkeys-lfu: for skewed access patterns
-  
+
 Distributed Lock:
   SET key value NX EX 30 (atomic set if not exists)
   Lua script for atomic check-and-delete on unlock

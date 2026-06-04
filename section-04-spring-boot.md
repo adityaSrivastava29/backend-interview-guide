@@ -26,17 +26,17 @@ nav_order: 5
 
 ---
 
-# 1. Auto-Configuration
+## 1. Auto-Configuration
 
-## Definition
+### Definition
 
 Spring Boot's **Auto-Configuration** automatically configures Spring application based on the JARs on your classpath. If you add `spring-boot-starter-data-jpa` to your project, Spring Boot automatically configures Hibernate, JPA, and a `DataSource` — you don't write a single line of configuration.
 
-## Mental Model
+### Mental Model
 
 Think of Auto-Configuration like a **smart hotel room** — when you walk in, the thermostat adjusts to 22°C, the TV turns to your profile, and the coffee machine starts brewing your preferred coffee. You didn't configure anything; the room detected your presence and did the right thing.
 
-## How Auto-Configuration Works
+### How Auto-Configuration Works
 
 ```mermaid
 flowchart TD
@@ -49,7 +49,7 @@ flowchart TD
     F --> H[User @Configuration beans take precedence]
 ```
 
-## The Key Mechanism: spring.factories / AutoConfiguration.imports
+### The Key Mechanism: spring.factories / AutoConfiguration.imports
 
 ```properties
 # META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports
@@ -62,7 +62,7 @@ org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguratio
 # ... 100+ more
 ```
 
-## @Conditional Annotations
+### @Conditional Annotations
 
 ```java
 @Configuration
@@ -70,7 +70,7 @@ org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguratio
 @ConditionalOnMissingBean(DataSource.class)     // only if user hasn't defined their own DataSource
 @ConditionalOnProperty(name = "spring.datasource.url") // only if property is set
 public class DataSourceAutoConfiguration {
-    
+
     @Bean
     @ConditionalOnMissingBean
     public DataSource dataSource(DataSourceProperties properties) {
@@ -83,21 +83,21 @@ public class DataSourceAutoConfiguration {
 }
 ```
 
-## Conditional Annotations Reference
+### Conditional Annotations Reference
 
-| Annotation | Condition |
-|------------|-----------|
-| `@ConditionalOnClass` | Class present on classpath |
-| `@ConditionalOnMissingClass` | Class absent from classpath |
-| `@ConditionalOnBean` | Bean already registered |
-| `@ConditionalOnMissingBean` | Bean NOT registered (override opportunity) |
-| `@ConditionalOnProperty` | Property set to specific value |
-| `@ConditionalOnExpression` | SpEL expression is true |
-| `@ConditionalOnWebApplication` | Is a web application |
-| `@ConditionalOnNotWebApplication` | Is NOT a web application |
-| `@ConditionalOnResource` | Resource file exists |
+| Annotation                        | Condition                                  |
+| --------------------------------- | ------------------------------------------ |
+| `@ConditionalOnClass`             | Class present on classpath                 |
+| `@ConditionalOnMissingClass`      | Class absent from classpath                |
+| `@ConditionalOnBean`              | Bean already registered                    |
+| `@ConditionalOnMissingBean`       | Bean NOT registered (override opportunity) |
+| `@ConditionalOnProperty`          | Property set to specific value             |
+| `@ConditionalOnExpression`        | SpEL expression is true                    |
+| `@ConditionalOnWebApplication`    | Is a web application                       |
+| `@ConditionalOnNotWebApplication` | Is NOT a web application                   |
+| `@ConditionalOnResource`          | Resource file exists                       |
 
-## Overriding Auto-Configuration
+### Overriding Auto-Configuration
 
 ```java
 // Define your own bean → @ConditionalOnMissingBean prevents auto-config bean creation
@@ -115,7 +115,7 @@ public class CustomDataSourceConfig {
 }
 ```
 
-## Debugging Auto-Configuration
+### Debugging Auto-Configuration
 
 ```bash
 # See all auto-configuration decisions (why applied or skipped)
@@ -130,35 +130,35 @@ GET /actuator/conditions
 
 ---
 
-# 2. Starter Dependencies
+## 2. Starter Dependencies
 
-## What is a Starter?
+### What is a Starter?
 
 A Starter is a **curated set of dependencies** you can include in your project to get all the libraries needed for a feature, with compatible versions.
 
-| Starter | Includes |
-|---------|----------|
-| `spring-boot-starter-web` | Spring MVC, Tomcat, Jackson |
-| `spring-boot-starter-data-jpa` | JPA, Hibernate, Spring Data JPA, HikariCP |
-| `spring-boot-starter-security` | Spring Security |
-| `spring-boot-starter-test` | JUnit 5, Mockito, AssertJ, MockMvc |
-| `spring-boot-starter-actuator` | Micrometer, health endpoints |
-| `spring-boot-starter-cache` | Spring Cache abstraction |
-| `spring-boot-starter-data-redis` | Jedis/Lettuce, Spring Data Redis |
-| `spring-boot-starter-kafka` | Spring Kafka |
-| `spring-boot-starter-validation` | Hibernate Validator (JSR-380) |
+| Starter                          | Includes                                  |
+| -------------------------------- | ----------------------------------------- |
+| `spring-boot-starter-web`        | Spring MVC, Tomcat, Jackson               |
+| `spring-boot-starter-data-jpa`   | JPA, Hibernate, Spring Data JPA, HikariCP |
+| `spring-boot-starter-security`   | Spring Security                           |
+| `spring-boot-starter-test`       | JUnit 5, Mockito, AssertJ, MockMvc        |
+| `spring-boot-starter-actuator`   | Micrometer, health endpoints              |
+| `spring-boot-starter-cache`      | Spring Cache abstraction                  |
+| `spring-boot-starter-data-redis` | Jedis/Lettuce, Spring Data Redis          |
+| `spring-boot-starter-kafka`      | Spring Kafka                              |
+| `spring-boot-starter-validation` | Hibernate Validator (JSR-380)             |
 
 ---
 
-# 3. Embedded Tomcat
+## 3. Embedded Tomcat
 
-## How It Works
+### How It Works
 
 Spring Boot embeds Tomcat **inside your JAR**. Your app is a standalone executable — no need for external application server.
 
 ```
 Traditional Deployment (WAR):
-  Tomcat Server (external) 
+  Tomcat Server (external)
     ├── webapps/
     │   └── myapp.war  ← your code deployed here
 
@@ -170,22 +170,22 @@ Spring Boot Deployment (JAR):
         └── org/springframework/boot/loader/  ← Spring Boot launcher
 ```
 
-## Configuring Embedded Tomcat
+### Configuring Embedded Tomcat
 
 ```yaml
 # application.yml
 server:
   port: 8080
   tomcat:
-    max-threads: 200          # max concurrent request threads
+    max-threads: 200 # max concurrent request threads
     min-spare-threads: 10
-    accept-count: 100         # queue size when all threads busy
-    connection-timeout: 20000  # 20 seconds
+    accept-count: 100 # queue size when all threads busy
+    connection-timeout: 20000 # 20 seconds
     max-connections: 8192
   compression:
     enabled: true
     mime-types: application/json,text/html
-    min-response-size: 1024   # only compress responses > 1KB
+    min-response-size: 1024 # only compress responses > 1KB
 ```
 
 ```java
@@ -205,9 +205,9 @@ public WebServerFactoryCustomizer<TomcatServletWebServerFactory> tomcatCustomize
 
 ---
 
-# 4. Profiles & Configuration Management
+## 4. Profiles & Configuration Management
 
-## Profiles
+### Profiles
 
 Profiles allow **environment-specific configuration** — different settings for dev, staging, prod.
 
@@ -216,7 +216,7 @@ Profiles allow **environment-specific configuration** — different settings for
 spring:
   application:
     name: order-service
-  
+
 server:
   port: 8080
 
@@ -228,13 +228,13 @@ spring:
       on-profile: dev
   datasource:
     url: jdbc:h2:mem:testdb
-    
+
 logging:
   level:
     com.example: DEBUG
 
 ---
-# application-prod.yml  
+# application-prod.yml
 spring:
   config:
     activate:
@@ -243,7 +243,7 @@ spring:
     url: jdbc:postgresql://${DB_HOST}:5432/${DB_NAME}
     username: ${DB_USER}
     password: ${DB_PASSWORD}
-    
+
 logging:
   level:
     com.example: WARN
@@ -278,7 +278,7 @@ public class DevSecurityConfig {
 }
 ```
 
-## Configuration Priority (Highest to Lowest)
+### Configuration Priority (Highest to Lowest)
 
 ```
 1. Command-line arguments: --server.port=9090
@@ -291,7 +291,7 @@ public class DevSecurityConfig {
 8. Default properties
 ```
 
-## Externalized Configuration Best Practices
+### Externalized Configuration Best Practices
 
 ```java
 // NEVER hardcode secrets in code or application.properties
@@ -313,13 +313,13 @@ private String dbPassword;
 
 ---
 
-# 5. Spring Boot Actuator
+## 5. Spring Boot Actuator
 
-## Definition
+### Definition
 
 Actuator provides **production-ready operational endpoints** — health checks, metrics, thread dumps, heap dumps, configuration details, and more.
 
-## Setup
+### Setup
 
 ```xml
 <dependency>
@@ -337,7 +337,7 @@ management:
         # NEVER expose 'env', 'heapdump', 'shutdown' without authentication in production!
   endpoint:
     health:
-      show-details: when-authorized  # don't expose db details to public
+      show-details: when-authorized # don't expose db details to public
       show-components: always
   health:
     circuitbreakers:
@@ -348,31 +348,31 @@ management:
         enabled: true
 ```
 
-## Key Endpoints
+### Key Endpoints
 
-| Endpoint | Description | Production Use |
-|----------|-------------|---------------|
-| `/actuator/health` | App health + component status | Load balancer health check |
-| `/actuator/metrics` | JVM, HTTP, custom metrics | Grafana dashboards |
-| `/actuator/prometheus` | Prometheus-format metrics | Prometheus scraping |
-| `/actuator/info` | App version, git info | Deployment verification |
-| `/actuator/env` | Configuration properties | Debugging (SECURE!) |
-| `/actuator/loggers` | Log level management | Change log level at runtime |
-| `/actuator/threaddump` | JVM thread dump | Deadlock investigation |
-| `/actuator/heapdump` | JVM heap dump | Memory leak investigation |
-| `/actuator/conditions` | Auto-config decisions | Debugging config |
-| `/actuator/mappings` | Request handler mappings | API discovery |
-| `/actuator/shutdown` | Graceful shutdown (POST) | NEVER expose publicly! |
+| Endpoint               | Description                   | Production Use              |
+| ---------------------- | ----------------------------- | --------------------------- |
+| `/actuator/health`     | App health + component status | Load balancer health check  |
+| `/actuator/metrics`    | JVM, HTTP, custom metrics     | Grafana dashboards          |
+| `/actuator/prometheus` | Prometheus-format metrics     | Prometheus scraping         |
+| `/actuator/info`       | App version, git info         | Deployment verification     |
+| `/actuator/env`        | Configuration properties      | Debugging (SECURE!)         |
+| `/actuator/loggers`    | Log level management          | Change log level at runtime |
+| `/actuator/threaddump` | JVM thread dump               | Deadlock investigation      |
+| `/actuator/heapdump`   | JVM heap dump                 | Memory leak investigation   |
+| `/actuator/conditions` | Auto-config decisions         | Debugging config            |
+| `/actuator/mappings`   | Request handler mappings      | API discovery               |
+| `/actuator/shutdown`   | Graceful shutdown (POST)      | NEVER expose publicly!      |
 
-## Custom Health Indicator
+### Custom Health Indicator
 
 ```java
 @Component
 public class ExternalApiHealthIndicator implements HealthIndicator {
-    
+
     @Autowired
     private PaymentGatewayClient paymentClient;
-    
+
     @Override
     public Health health() {
         try {
@@ -397,32 +397,32 @@ public class ExternalApiHealthIndicator implements HealthIndicator {
 }
 ```
 
-## Custom Metrics
+### Custom Metrics
 
 ```java
 @Service
 public class OrderService {
-    
+
     private final Counter ordersPlacedCounter;
     private final Timer orderProcessingTimer;
     private final Gauge pendingOrdersGauge;
-    
+
     public OrderService(MeterRegistry meterRegistry, OrderRepository orderRepo) {
         this.ordersPlacedCounter = Counter.builder("orders.placed.total")
             .description("Total orders placed")
             .tag("currency", "USD")
             .register(meterRegistry);
-        
+
         this.orderProcessingTimer = Timer.builder("orders.processing.time")
             .description("Order processing duration")
             .register(meterRegistry);
-        
-        this.pendingOrdersGauge = Gauge.builder("orders.pending.count", orderRepo, 
+
+        this.pendingOrdersGauge = Gauge.builder("orders.pending.count", orderRepo,
             repo -> repo.countByStatus("PENDING"))
             .description("Current pending orders")
             .register(meterRegistry);
     }
-    
+
     public Order placeOrder(OrderRequest request) {
         return orderProcessingTimer.record(() -> {
             Order order = processOrder(request);
@@ -435,16 +435,16 @@ public class OrderService {
 
 ---
 
-# 6. Exception Handling
+## 6. Exception Handling
 
-## @ControllerAdvice — Global Exception Handler
+### @ControllerAdvice — Global Exception Handler
 
 ```java
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-    
+
     // Validation errors
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -454,7 +454,7 @@ public class GlobalExceptionHandler {
             .stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
             .collect(Collectors.toList());
-        
+
         return ApiError.builder()
             .status(400)
             .message("Validation failed")
@@ -462,7 +462,7 @@ public class GlobalExceptionHandler {
             .timestamp(Instant.now())
             .build();
     }
-    
+
     // Business logic exceptions
     @ExceptionHandler(OrderNotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -470,7 +470,7 @@ public class GlobalExceptionHandler {
         log.warn("Order not found: {}", ex.getOrderId());
         return ApiError.of(404, ex.getMessage(), request.getRequestURI());
     }
-    
+
     // Payment failures
     @ExceptionHandler(PaymentDeclinedException.class)
     @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
@@ -478,7 +478,7 @@ public class GlobalExceptionHandler {
         log.warn("Payment declined: {}", ex.getReason());
         return ApiError.of(422, "Payment could not be processed: " + ex.getReason());
     }
-    
+
     // Catch-all — unexpected errors
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -502,31 +502,31 @@ public class ApiError {
 
 ---
 
-# 7. Validation
+## 7. Validation
 
 ```java
 // Request DTO with validation constraints
 @Data
 public class CreateOrderRequest {
-    
+
     @NotBlank(message = "User ID is required")
     private String userId;
-    
+
     @NotEmpty(message = "Order must have at least one item")
     @Size(max = 50, message = "Cannot have more than 50 items")
     private List<@Valid OrderItem> items;
-    
+
     @NotNull
     @DecimalMin(value = "0.01", message = "Amount must be positive")
     @DecimalMax(value = "999999.99", message = "Amount exceeds maximum")
     private BigDecimal totalAmount;
-    
+
     @Pattern(regexp = "^[A-Z]{3}$", message = "Currency must be 3-letter ISO code")
     private String currency;
-    
+
     @Future(message = "Delivery date must be in the future")
     private LocalDate requestedDeliveryDate;
-    
+
     @Email
     private String contactEmail;
 }
@@ -536,13 +536,13 @@ public class CreateOrderRequest {
 @RequestMapping("/api/orders")
 @Validated  // enables method-level validation
 public class OrderController {
-    
+
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @Valid @RequestBody CreateOrderRequest request) { // @Valid triggers validation
         return ResponseEntity.ok(orderService.createOrder(request));
     }
-    
+
     // Method-level constraint
     @GetMapping("/{orderId}")
     public OrderResponse getOrder(
@@ -563,7 +563,7 @@ public @interface ValidCurrency {
 
 public class ValidCurrencyValidator implements ConstraintValidator<ValidCurrency, String> {
     private static final Set<String> SUPPORTED = Set.of("USD", "EUR", "GBP", "INR");
-    
+
     @Override
     public boolean isValid(String value, ConstraintValidatorContext ctx) {
         return value != null && SUPPORTED.contains(value.toUpperCase());
@@ -573,9 +573,9 @@ public class ValidCurrencyValidator implements ConstraintValidator<ValidCurrency
 
 ---
 
-# 8. Caching
+## 8. Caching
 
-## Spring Cache Abstraction
+### Spring Cache Abstraction
 
 ```java
 // Enable caching
@@ -586,32 +586,32 @@ public class Application { ... }
 // Service with caching
 @Service
 public class ProductService {
-    
+
     // Cache result keyed by productId
     @Cacheable(value = "products", key = "#productId")
     public Product getProduct(String productId) {
         log.info("DB HIT for product: {}", productId); // only called on cache miss
         return productRepository.findById(productId).orElseThrow();
     }
-    
+
     // Update cache when product is updated
     @CachePut(value = "products", key = "#product.id")
     public Product updateProduct(Product product) {
         return productRepository.save(product);
     }
-    
+
     // Evict from cache when product is deleted
     @CacheEvict(value = "products", key = "#productId")
     public void deleteProduct(String productId) {
         productRepository.deleteById(productId);
     }
-    
+
     // Evict all entries in the "products" cache
     @CacheEvict(value = "products", allEntries = true)
     public void refreshAllProducts() {
         // typically called by a scheduled job
     }
-    
+
     // Conditional caching
     @Cacheable(value = "products", key = "#productId",
                condition = "#productId != null",
@@ -622,13 +622,13 @@ public class ProductService {
 }
 ```
 
-## Redis Cache Configuration
+### Redis Cache Configuration
 
 ```java
 @Configuration
 @EnableCaching
 public class CacheConfig {
-    
+
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
@@ -638,14 +638,14 @@ public class CacheConfig {
             .serializeValuesWith(RedisSerializationContext.SerializationPair
                 .fromSerializer(new GenericJackson2JsonRedisSerializer()))
             .disableCachingNullValues();
-        
+
         // Different TTL per cache
         Map<String, RedisCacheConfiguration> cacheConfigs = Map.of(
             "products", defaultConfig.entryTtl(Duration.ofHours(1)),
             "users",    defaultConfig.entryTtl(Duration.ofMinutes(30)),
             "sessions", defaultConfig.entryTtl(Duration.ofHours(8))
         );
-        
+
         return RedisCacheManager.builder(connectionFactory)
             .cacheDefaults(defaultConfig)
             .withInitialCacheConfigurations(cacheConfigs)
@@ -656,7 +656,7 @@ public class CacheConfig {
 
 ---
 
-# 9. Scheduling
+## 9. Scheduling
 
 ```java
 @SpringBootApplication
@@ -665,25 +665,25 @@ public class Application { ... }
 
 @Component
 public class ScheduledJobs {
-    
+
     // Fixed rate — runs every 5 minutes, regardless of task duration
     @Scheduled(fixedRate = 5, timeUnit = TimeUnit.MINUTES)
     public void syncInventory() {
         inventoryService.syncWithWarehouse();
     }
-    
+
     // Fixed delay — waits 30 seconds AFTER task completes before next run
     @Scheduled(fixedDelay = 30, timeUnit = TimeUnit.SECONDS)
     public void processRetryQueue() {
         retryService.processFailedEvents();
     }
-    
+
     // Cron — every weekday at 2:00 AM
     @Scheduled(cron = "0 0 2 * * MON-FRI")
     public void generateDailyReport() {
         reportService.generateReport();
     }
-    
+
     // Cron with zone
     @Scheduled(cron = "0 0 9 * * *", zone = "America/New_York")
     public void sendMorningDigest() {
@@ -692,7 +692,7 @@ public class ScheduledJobs {
 }
 ```
 
-## Cron Expression Format
+### Cron Expression Format
 
 ```
 ┌──────────── second (0-59)
@@ -711,7 +711,7 @@ Examples:
 0 0 0 1 * *        → midnight on 1st of every month
 ```
 
-## Distributed Scheduling with ShedLock
+### Distributed Scheduling with ShedLock
 
 ```java
 // Prevent multiple instances from running the same scheduled job
@@ -725,7 +725,7 @@ public void syncInventory() {
 
 ---
 
-# 10. Async Processing
+## 10. Async Processing
 
 ```java
 @SpringBootApplication
@@ -736,7 +736,7 @@ public class Application { ... }
 @Configuration
 @EnableAsync
 public class AsyncConfig implements AsyncConfigurer {
-    
+
     @Override
     public Executor getAsyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -748,7 +748,7 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.initialize();
         return executor;
     }
-    
+
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (ex, method, params) -> {
@@ -760,14 +760,14 @@ public class AsyncConfig implements AsyncConfigurer {
 
 @Service
 public class NotificationService {
-    
+
     // @Async — returns immediately, runs in background thread
     @Async
     public void sendEmailAsync(String recipient, String subject, String body) {
         // runs in thread pool, does not block caller
         emailClient.send(recipient, subject, body);
     }
-    
+
     // @Async with Future return
     @Async
     public CompletableFuture<NotificationResult> sendPushAsync(String userId, String message) {
@@ -783,15 +783,15 @@ public class NotificationService {
 // Controller using async
 @RestController
 public class OrderController {
-    
+
     @PostMapping("/orders")
     public ResponseEntity<OrderResponse> placeOrder(@RequestBody OrderRequest request) {
         Order order = orderService.createOrder(request);
-        
+
         // Fire-and-forget: send notifications asynchronously
         notificationService.sendEmailAsync(request.getEmail(), "Order Confirmed", buildEmailBody(order));
         notificationService.sendPushAsync(request.getUserId(), "Your order #" + order.getId() + " is confirmed!");
-        
+
         // Return immediately without waiting for notifications
         return ResponseEntity.ok(OrderResponse.from(order));
     }
@@ -800,7 +800,7 @@ public class OrderController {
 
 ---
 
-# 11. Spring Security Integration
+## 11. Spring Security Integration
 
 > Full Security coverage is in Section 13. This section covers Spring Boot integration.
 
@@ -809,7 +809,7 @@ public class OrderController {
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
@@ -829,12 +829,12 @@ public class SecurityConfig {
             )
             .build();
     }
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12); // cost factor 12
     }
-    
+
     @Bean
     public AuthenticationManager authManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
@@ -844,33 +844,35 @@ public class SecurityConfig {
 
 ---
 
-## Production Scenarios
+### Production Scenarios
 
-### Scenario 1: Application OOMing After Deploy
+#### Scenario 1: Application OOMing After Deploy
 
 **Problem:** Application running fine for 2 hours, then crashes with OOM.
 
 **Root Cause:** `@Cacheable` on a method returning a `List<Order>` without TTL — cache grows unbounded.
 
 **Fix:**
+
 ```yaml
 spring:
   cache:
     redis:
-      time-to-live: 600000  # 10 minutes in ms
+      time-to-live: 600000 # 10 minutes in ms
 ```
 
 **Prevention:** Always set TTL on cache entries. Use `@CacheEvict` on write operations. Monitor cache hit/miss ratio via Actuator metrics.
 
 ---
 
-### Scenario 2: @Transactional Not Working
+#### Scenario 2: @Transactional Not Working
 
 **Problem:** Data is not being rolled back after an exception.
 
 **Root Cause:** `@Transactional` on a method that catches the exception and doesn't rethrow it. Or method called via self-invocation.
 
 **Fix:**
+
 ```java
 // WRONG
 @Transactional
@@ -893,19 +895,22 @@ public void processOrder(Order order) {
 
 ---
 
-## Interview Questions
+### Interview Questions
 
-### Basic
+#### Basic
+
 1. What is Auto-Configuration in Spring Boot?
 2. How do you create a custom health indicator?
 3. What is the difference between `@Scheduled(fixedRate)` and `@Scheduled(fixedDelay)`?
 
-### Intermediate
+#### Intermediate
+
 4. How does `@ConditionalOnMissingBean` enable overriding auto-configured beans?
 5. How would you configure different database settings for dev and prod profiles?
 6. What is the difference between `@Async` and `CompletableFuture.supplyAsync`?
 
-### Advanced
+#### Advanced
+
 7. How does Spring Boot's embedded Tomcat handle graceful shutdown?
 8. Explain how `@Cacheable` works with Redis — trace from annotation to Redis call.
 9. How would you implement rate limiting using Spring Boot and Redis?
@@ -913,7 +918,7 @@ public void processOrder(Order order) {
 
 ---
 
-## Summary — Spring Boot Cheatsheet
+### Summary — Spring Boot Cheatsheet
 
 ```
 Auto-Configuration:

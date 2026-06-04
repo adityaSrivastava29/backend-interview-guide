@@ -13,6 +13,7 @@ color_scheme: "dark"
 # GitHub Pages URL settings
 url: "https://adityaSrivastava29.github.io"
 baseurl: "/backend-interview-guide"
+permalink: pretty
 
 # Exclusions
 exclude:
