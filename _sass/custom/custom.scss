@@ -27,6 +27,7 @@
 
 // Ensure the site title has proper line-height and doesn't get clipped when wrapping
 .site-title {
+  font-size: 1rem !important;
   line-height: 1.35 !important;
   padding-top: 0.25rem !important;
   padding-bottom: 0.25rem !important;
