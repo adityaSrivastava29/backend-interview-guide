@@ -5,10 +5,9 @@ nav_order: 1
 permalink: /
 ---
 
-# Java Backend Engineering Handbook
+# Backend Engineering Handbook
 
 > **Complete Interview Preparation & Production Knowledge Base**
-> Target: 3–6 Years Experienced Software Engineer | Java · Spring Boot · Microservices
 
 ---
 
