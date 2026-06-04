@@ -1,0 +1,37 @@
+<!-- Custom header overrides injected into <head> -->
+<style>
+  /* Adjust spacing at the top of the sidebar to prevent the title from being cut off on desktop */
+  .side-bar .site-header {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  @media (max-width: 992px) {
+    .side-bar .site-header {
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+    }
+  }
+
+  /* Adjust the top header on mobile/tablet to fit wrapping titles */
+  .site-header {
+    height: auto !important;
+    min-height: 60px !important;
+    display: flex !important;
+    align-items: center !important;
+    
+    /* Ensure we don't cut off text at the top of the viewport */
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  /* Ensure the site title has proper line-height and doesn't get clipped when wrapping */
+  .site-title {
+    line-height: 1.35 !important;
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+</style>
