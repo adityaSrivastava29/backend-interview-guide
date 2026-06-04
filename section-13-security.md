@@ -1,3 +1,9 @@
+---
+layout: default
+title: Security
+nav_order: 14
+---
+
 # Section 13: Security — JWT, OAuth2, Spring Security & OWASP
 
 > Authentication, authorization, and securing Spring Boot APIs against OWASP Top 10

@@ -1,3 +1,9 @@
+---
+layout: default
+title: JPA & Hibernate
+nav_order: 7
+---
+
 # Section 6: JPA & Hibernate — Deep Dive
 
 > Entity Lifecycle, N+1, Lazy Loading, Caching, and Production Problems

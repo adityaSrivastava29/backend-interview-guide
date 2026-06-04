@@ -1,3 +1,9 @@
+---
+layout: default
+title: Kafka
+nav_order: 10
+---
+
 # Section 9: Apache Kafka — Complete Guide
 
 > Architecture, producers, consumers, Spring Kafka, and production patterns

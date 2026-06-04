@@ -1,3 +1,9 @@
+---
+layout: default
+title: Spring Cloud
+nav_order: 9
+---
+
 # Section 8: Spring Cloud — Service Mesh for Java
 
 > Eureka, Config Server, API Gateway, OpenFeign, Resilience4j — production examples

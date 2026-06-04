@@ -1,3 +1,9 @@
+---
+layout: default
+title: Spring Framework
+nav_order: 4
+---
+
 # Section 3: Spring Framework — Deep Dive
 
 > IoC, DI, Bean Lifecycle, AOP, and all core Spring concepts with production context

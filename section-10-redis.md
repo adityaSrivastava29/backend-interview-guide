@@ -1,3 +1,9 @@
+---
+layout: default
+title: Redis
+nav_order: 11
+---
+
 # Section 10: Redis — Caching, Data Structures & Distributed Patterns
 
 > Data structures, caching strategies, distributed locks, and rate limiting

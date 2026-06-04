@@ -1,3 +1,9 @@
+---
+layout: default
+title: Interview Q&A Bank
+nav_order: 16
+---
+
 # Section 15: Interview Q&A Bank — Top Questions with Answers
 
 > Curated top questions across Java, Spring Boot, Microservices, Kafka, and SQL with concise answers

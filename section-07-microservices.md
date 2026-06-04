@@ -1,3 +1,9 @@
+---
+layout: default
+title: Microservices
+nav_order: 8
+---
+
 # Section 7: Microservices — Patterns, Communication, and Production
 
 > Architecture patterns, distributed systems challenges, and real-world solutions

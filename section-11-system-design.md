@@ -1,3 +1,9 @@
+---
+layout: default
+title: System Design
+nav_order: 12
+---
+
 # Section 11: System Design — Practical Patterns
 
 > URL Shortener, Payment System, E-commerce Checkout, Notification Service

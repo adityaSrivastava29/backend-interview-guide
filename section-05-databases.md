@@ -1,3 +1,9 @@
+---
+layout: default
+title: Databases
+nav_order: 6
+---
+
 # Section 5: Databases — SQL, Indexes, Transactions, Optimization
 
 > PostgreSQL / MySQL — everything from indexes to sharding

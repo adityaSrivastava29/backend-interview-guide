@@ -1,3 +1,9 @@
+---
+layout: default
+title: DevOps
+nav_order: 13
+---
+
 # Section 12: DevOps — Docker, Kubernetes, CI/CD, Monitoring
 
 > Container orchestration, pipelines, and observability for Java backend engineers

@@ -1,3 +1,9 @@
+---
+layout: default
+title: Spring Boot
+nav_order: 5
+---
+
 # Section 4: Spring Boot — Deep Dive
 
 > Auto-configuration, Actuator, Profiles, Caching, Async, Security and more

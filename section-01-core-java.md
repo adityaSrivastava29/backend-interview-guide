@@ -1,5 +1,10 @@
-# Section 1: Core Java — Deep Dive
+---
+layout: default
+title: Core Java
+nav_order: 2
+---
 
+# Section 1: Core Java — Deep Dive
 
 ---
 

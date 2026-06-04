@@ -1,0 +1,26 @@
+# Jekyll Configuration
+title: "Java Backend Engineering Handbook"
+description: "Complete Interview Preparation & Production Knowledge Base"
+theme: "just-the-docs"
+
+# Navigation Settings
+search_enabled: true
+heading_anchors: true
+
+# Color scheme
+color_scheme: "dark"
+
+# GitHub Pages URL settings
+url: "https://adityaSrivastava29.github.io"
+baseurl: "/backend-interview-guide"
+
+# Exclusions
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - README.md

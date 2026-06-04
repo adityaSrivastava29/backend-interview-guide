@@ -1,3 +1,9 @@
+---
+layout: default
+title: Design Patterns
+nav_order: 3
+---
+
 # Section 2: Design Patterns — Complete Guide
 
 > Gang of Four (GoF) patterns + modern Java production usage
