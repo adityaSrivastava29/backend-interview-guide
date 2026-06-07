@@ -23,6 +23,12 @@ A production-grade, interview-focused knowledge base covering every topic a Java
 - **Production Incidents** → Section 14 has 100 real incident walkthroughs
 - **Cheatsheets** → Each section ends with a condensed cheatsheet
 
+## PDF Resources
+
+Download or view the curated offline PDF guides:
+- 📄 [Top 50 DSA Interview Questions with Java Solutions (PDF)](Top%2050%20DSA%20Interview%20Questions%20with%20Java%20Solutions.pdf)
+- 📄 [Core Java Interview Questions (PDF)](core%20java%20interview%20questions.pdf)
+
 ## Sections
 
 | # | Section | File | Topics |
